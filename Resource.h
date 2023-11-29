@@ -16,6 +16,9 @@
 #ifndef IDC_STATIC
 #define IDC_STATIC				-1
 #define IDC_CUSTOM_BUTTON 1001 // Use an appropriate numeric value
+#define ID_webcameraon	1002
+#define ID_ccdcameraon	1003
+#define ID_cameraoff	1004
 
 #endif
 // Next default values for new objects

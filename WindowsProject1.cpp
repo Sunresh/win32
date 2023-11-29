@@ -3,8 +3,8 @@
 #pragma once
 
 #include "resource.h"
-
 #include "framework.h"
+#include "Camera.h"
 
 #define MAX_LOADSTRING 100
 
@@ -95,22 +95,16 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        In this function, we save the instance handle in a global variable and
 //        create and display the main program window.
 //
+
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Store instance handle in our global variable
-
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-
-   return TRUE;
+	hInst = hInstance; // Store instance handle in our global variable
+	Camera camera(nullptr, hInstance); // Initialize Camera instance
+	// Create the window and store its handle in the Camera instance
+	camera.createWindow(szWindowClass, szTitle, nCmdShow);
+	// Start the camera after the window is created
+	camera.start();
+	return TRUE;
 }
 
 //
@@ -125,8 +119,14 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static Camera* camera;
     switch (message)
     {
+	case WM_CREATE:
+		//camera.createWindow(szWindowClass, szTitle, SW_SHOW); // Create the window
+		//camera.start(); // Display the image
+		break;
+
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -149,6 +149,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
+
             EndPaint(hWnd, &ps);
         }
         break;
