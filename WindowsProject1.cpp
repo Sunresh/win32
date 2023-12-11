@@ -2,11 +2,13 @@
 #include "WindowsProject1.h"
 #include "opencv2/opencv.hpp"
 #include "camera.cpp"
-
+#include "daqSignal.h"
+MyDaq daq;
 #define MAX_LOADSTRING 100
 #define ID_BTN_CAMERA_ON 130
 #define ID_BTN_CAMERA_OFF 131
 #define ID_BTN_LASER_ON 132
+#define ID_BTN_LASER_OFF 133
 bool stopCamera = true;
 double meancv;
 cv::VideoCapture cap;
@@ -149,14 +151,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"BUTTON", L"Camera ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15, 255, 30, hFrame, (HMENU)ID_BTN_CAMERA_ON, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 47, 255, 30, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 79, 255, 30, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 111, 255, 30, hFrame, NULL, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 111, 255, 30, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 143, 255, 30, hFrame, NULL, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 175, 255, 30, hFrame, NULL, NULL, NULL);
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 215, 520, 215, hWnd, NULL, NULL, NULL);
-
-
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
 	break;
@@ -173,6 +173,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				std::thread graphThread(UpdateGraph, graphframe);
 				graphThread.detach(); // Detach the graph thread to run independently
 				DisplayCameraFrame(g_hFrame1, zoomfram);
+				//cam.DisplayCameraFrame(g_hFrame1, zoomfram);
 				InvalidateRect(hWnd, NULL, TRUE);
 			}
 				break;
@@ -185,9 +186,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case ID_BTN_LASER_ON:
 			{
-				cam.start();
+				daq.digitalOut(nullptr, "Dev2/port0/line0", true);
 			}
 				break;
+			case ID_BTN_LASER_OFF:
+			{
+				daq.digitalOut(nullptr, "Dev2/port0/line0", false);
+			}
+			break;
 			case IDM_ABOUT:
                 DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
                 break;
@@ -272,7 +278,7 @@ void DisplayCameraFrame(HWND hWnd, HWND hWn)
 
 void ReleaseCameraResources(HDC hdc) {
 	cap.release();
-	ReleaseDC(g_hFrame1, hdc); // Release the device context
+	ReleaseDC(g_hFrame1, hdc);
 }
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

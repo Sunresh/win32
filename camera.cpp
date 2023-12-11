@@ -5,7 +5,11 @@
 class Camera {
 private:
 	int id = 0;
+	cv::VideoCapture cap;
+	bool stopCamera = true;
 	int getId;
+	std::deque<double> brightData;
+	double meancv=0;
 public:
 	Camera(): getId(id) {
 
@@ -24,6 +28,59 @@ public:
 		double variance = 0.0;
 		double meanCV = cv::mean(grayFrame)[0];
 		return meanCV;
+	}
+
+	void DisplayCameraFrame(HWND hWnd, HWND hWn)
+	{
+		cap.open(0);
+		if (!cap.isOpened()) {
+			return;
+		}
+		HDC hdc = GetDC(hWnd); // Obtain device context for the window
+		HDC hdc1 = GetDC(hWn); // Obtain device context for the window
+		cv::Mat dframe, frame;
+		while (!stopCamera) {
+			cap >> dframe;
+			if (!dframe.empty()) {
+				cv::flip(dframe, frame, 1);//flip
+				cv::resize(frame, frame, cv::Size(260, 215));
+				// Show original frame in g_hFrame1
+				cv::Mat tmpFrameOriginal;
+				cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
+				// Show cropped portion in zoomfram
+				drawRectangle(tmpFrameOriginal, 50, 50, 150, 150, cv::Scalar(0, 0, 255), 1);
+				cv::Mat croppedFrame = frame(cv::Rect(50, 50, 100, 100)); // Example crop - adjust as needed
+				cv::Mat tmpFrameCropped;
+				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
+				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(260, 215));
+				meancv = meanofBri(tmpFrameCropped);
+				brightData.push_back(meancv);
+				std::wstring meanString = std::to_wstring(meancv);
+				OutputDebugStringW(meanString.c_str());
+				// Display original frame in g_hFrame1
+				HBITMAP hBitmapOriginal = CreateBitmap(tmpFrameOriginal.cols, tmpFrameOriginal.rows, 1, 32, tmpFrameOriginal.data);
+				HDC memDCOriginal = CreateCompatibleDC(hdc);
+				SelectObject(memDCOriginal, hBitmapOriginal);
+				BitBlt(hdc, 0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows, memDCOriginal, 0, 0, SRCCOPY);
+				DeleteDC(memDCOriginal);
+				DeleteObject(hBitmapOriginal);
+				// Display cropped portion in zoomfram
+				HBITMAP hBitmapCropped = CreateBitmap(tmpFrameCropped.cols, tmpFrameCropped.rows, 1, 32, tmpFrameCropped.data);
+				HDC memDCCropped = CreateCompatibleDC(hdc1);
+				SelectObject(memDCCropped, hBitmapCropped);
+				BitBlt(hdc1, 0, 0, tmpFrameCropped.cols, tmpFrameCropped.rows, memDCCropped, 0, 0, SRCCOPY);
+				DeleteDC(memDCCropped);
+				DeleteObject(hBitmapCropped);
+			}
+			InvalidateRect(hWnd, NULL, TRUE);
+			if (cv::waitKey(1) == 'q') {
+				stopCamera = true;
+				break;
+			}
+		}
+		cap.release();
+		ReleaseDC(hWnd, hdc);
+		ReleaseDC(hWn, hdc1);
 	}
 
 
