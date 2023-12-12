@@ -1,16 +1,17 @@
+#ifndef DAQ_SIGNAL_H
+#define DAQ_SIGNAL_H
+#include <nidaqmx.h>
 #include "framework.h"
 #include "WindowsProject1.h"
-#include <nidaqmx.h>
+
 using namespace std;
+
 class MyDaq {
 private:
 	bool isStart;
-
 public:
-	MyDaq() : isStart(true) {
-
-	}
-	void start(TaskHandle task1 = nullptr, const char dev0[64] = "dev0", const double voltage = 0) {
+	MyDaq(): isStart(true) {}
+	void start(TaskHandle task1 = nullptr, const char dev0[64] = "Dev2/ao0", const double voltage = 0) {
 		DAQmxCreateTask("", &task1);
 		DAQmxCreateAOVoltageChan(task1, dev0, "ao_channel", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
 		DAQmxCfgSampClkTiming(task1, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
@@ -52,3 +53,5 @@ public:
 	}
 
 };
+
+#endif // DAQ_SIGNAL_H

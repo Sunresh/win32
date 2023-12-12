@@ -3,19 +3,25 @@
 #include "opencv2/opencv.hpp"
 #include "camera.cpp"
 #include "daqSignal.h"
-MyDaq daq;
+#include "Deposition.h"
+
 #define MAX_LOADSTRING 100
 #define ID_BTN_CAMERA_ON 130
 #define ID_BTN_CAMERA_OFF 131
 #define ID_BTN_LASER_ON 132
 #define ID_BTN_LASER_OFF 133
+#define IDC_STATIC_HEIGHT 134
 bool stopCamera = true;
 double meancv;
 cv::VideoCapture cap;
 std::deque<double> brightData;
 Camera cam;
+
+MyDaq daq;
+Deposition Dp;
+
 HWND g_hFrame1;
-HWND zoomfram;
+HWND zoomfram,calFrame, info;
 HWND graphframe;
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
@@ -25,12 +31,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
-void DisplayCameraFrame(HWND hWnd,HWND hWn);
-void ReleaseCameraResources(HDC hdc);
-
+void UpdateHeightText(HWND hWndStatic, double heightValue);
 
 std::atomic<bool> stopGraphUpdate(true);
 void UpdateGraph(HWND graphframe) {
+	const std::deque<double>& brightData = cam.GetBrightData();
+	Dp.start();
 	while (!stopGraphUpdate) {
 		if (!brightData.empty()) {
 			HDC graphf = GetDC(graphframe);
@@ -52,7 +58,7 @@ void UpdateGraph(HWND graphframe) {
 			HPEN hGraphPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 255)); // Adjust graph color as needed
 			SelectObject(graphf, hGraphPen);
 
-			int dataCount = brightData.size();
+			int dataCount = static_cast<int>(brightData.size());
 			double scaleY = 0.8; // Adjust this scale factor as needed
 			int startX = 0;
 
@@ -74,7 +80,11 @@ void UpdateGraph(HWND graphframe) {
 			DeleteObject(hGraphPen);
 			ReleaseDC(graphframe, graphf);
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Adjust the delay as needed
+		
+		double pzt = Dp.getPZT();
+		HWND hWndHeight = GetDlgItem(info, IDC_STATIC_HEIGHT);
+		UpdateHeightText(hWndHeight, pzt);
+		//std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Adjust the delay as needed
 	}
 }
 
@@ -154,9 +164,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 111, 255, 30, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 143, 255, 30, hFrame, NULL, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 175, 255, 30, hFrame, NULL, NULL, NULL);
+
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
-		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 215, 520, 215, hWnd, NULL, NULL, NULL);
+		calFrame = CreateWindowW(L"BUTTON", L"Calculation Area", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 782, 2, 260, 215, hWnd, NULL, NULL, NULL);
+
+		// Assuming 'hWnd' is the parent window handle
+
+		info = CreateWindowW(L"BUTTON", L"Information", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 215, 260, 215, hWnd, NULL, NULL, NULL);
+		
+		HWND hWndHeight = CreateWindowW(L"STATIC", L"Height: 100", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 20, 240, 20, info, (HMENU)IDC_STATIC_HEIGHT, NULL, NULL);
+		UpdateHeightText(hWndHeight, cam.getBrightness());
+		
+		CreateWindowW(L"STATIC", L"E.Volt: 5V", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 50, 240, 20, info, NULL, NULL, NULL);
+		CreateWindowW(L"STATIC", L"PZT volt: 10V", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 80, 240, 20, info, NULL, NULL, NULL);
+		CreateWindowW(L"STATIC", L"Dep. Time: 60s", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 110, 240, 20, info, NULL, NULL, NULL);
+		CreateWindowW(L"STATIC", L"Upper Th.: 75", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 140, 240, 20, info, NULL, NULL, NULL);
+		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, NULL, NULL, NULL);
+
+		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 520, 215, hWnd, NULL, NULL, NULL);
+
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
 	break;
@@ -168,19 +195,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
 			case ID_BTN_CAMERA_ON:
 			{
-				stopCamera = false;
+				cam.setStopCamera(false);
 				stopGraphUpdate = false; // Start updating the graph
 				std::thread graphThread(UpdateGraph, graphframe);
 				graphThread.detach(); // Detach the graph thread to run independently
-				DisplayCameraFrame(g_hFrame1, zoomfram);
-				//cam.DisplayCameraFrame(g_hFrame1, zoomfram);
+				cam.DisplayCameraFrame(g_hFrame1, zoomfram, calFrame);				
 				InvalidateRect(hWnd, NULL, TRUE);
 			}
 				break;
 			case ID_BTN_CAMERA_OFF:
 			{
+				cam.setStopCamera(true);
 				stopCamera = true;
 				stopGraphUpdate = true; // Stop updating the graph
+				Dp.setStopDeposition(true);
+				Dp.stop();
 				
 			}
 				break;
@@ -223,63 +252,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void DisplayCameraFrame(HWND hWnd, HWND hWn)
-{
-	cap.open(0);
-	if (!cap.isOpened()) {
-		return;
-	}
-	HDC hdc = GetDC(hWnd); // Obtain device context for the window
-	HDC hdc1 = GetDC(hWn); // Obtain device context for the window
-
-	cv::Mat dframe,frame;
-	while (!stopCamera) {
-		cap >> dframe;
-		if (!dframe.empty()) {
-			cv::flip(dframe, frame, 1);//flip
-			cv::resize(frame, frame, cv::Size(260, 215));
-			// Show original frame in g_hFrame1
-			cv::Mat tmpFrameOriginal;
-			cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
-			// Show cropped portion in zoomfram
-			cam.drawRectangle(tmpFrameOriginal,50,50,150,150, cv::Scalar(0, 0, 255),1);
-			cv::Mat croppedFrame = frame(cv::Rect(50, 50, 100, 100)); // Example crop - adjust as needed
-			cv::Mat tmpFrameCropped;
-			cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
-			cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(260, 215));
-			meancv = cam.meanofBri(tmpFrameCropped);
-			brightData.push_back(meancv);
-			std::wstring meanString = std::to_wstring(meancv);
-			OutputDebugStringW(meanString.c_str());
-			// Display original frame in g_hFrame1
-			HBITMAP hBitmapOriginal = CreateBitmap(tmpFrameOriginal.cols, tmpFrameOriginal.rows, 1, 32, tmpFrameOriginal.data);
-			HDC memDCOriginal = CreateCompatibleDC(hdc);
-			SelectObject(memDCOriginal, hBitmapOriginal);
-			BitBlt(hdc, 0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows, memDCOriginal, 0, 0, SRCCOPY);
-			DeleteDC(memDCOriginal);
-			DeleteObject(hBitmapOriginal);
-
-			// Display cropped portion in zoomfram
-			HBITMAP hBitmapCropped = CreateBitmap(tmpFrameCropped.cols, tmpFrameCropped.rows, 1, 32, tmpFrameCropped.data);
-			HDC memDCCropped = CreateCompatibleDC(hdc1);
-			SelectObject(memDCCropped, hBitmapCropped);
-			BitBlt(hdc1, 0, 0, tmpFrameCropped.cols, tmpFrameCropped.rows, memDCCropped, 0, 0, SRCCOPY);
-			DeleteDC(memDCCropped);
-			DeleteObject(hBitmapCropped);
-		}
-		InvalidateRect(hWnd, NULL, TRUE);
-		if (cv::waitKey(1) == 'q') {
-			stopCamera = true;
-			break;
-		}
-	}
-	ReleaseCameraResources(hdc);
-}
-
-void ReleaseCameraResources(HDC hdc) {
-	cap.release();
-	ReleaseDC(g_hFrame1, hdc);
-}
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -299,3 +271,9 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+void UpdateHeightText(HWND hWndStatic, double heightValue) {
+	wchar_t buffer[50];
+	swprintf_s(buffer, sizeof(buffer) / sizeof(buffer[0]), L"Height: %.2f", heightValue);
+	SetWindowTextW(hWndStatic, buffer);
+	RedrawWindow(hWndStatic, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+}

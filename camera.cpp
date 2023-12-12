@@ -6,13 +6,20 @@ class Camera {
 private:
 	int id = 0;
 	cv::VideoCapture cap;
-	bool stopCamera = true;
 	int getId;
+	bool stopCamera = true;
 	std::deque<double> brightData;
-	double meancv=0;
+	double brightness = 0;
+
 public:
 	Camera(): getId(id) {
 
+	}
+	void setStopCamera(bool stop) {
+		stopCamera = stop;
+	}
+	bool getstopCamera() const {
+		return stopCamera;
 	}
 	void start() {
 		OutputDebugStringW(L"\naayyo\n");
@@ -29,8 +36,16 @@ public:
 		double meanCV = cv::mean(grayFrame)[0];
 		return meanCV;
 	}
-
-	void DisplayCameraFrame(HWND hWnd, HWND hWn)
+	const std::deque<double>& Camera::GetBrightData() const {
+		return brightData;
+	}
+	void setBrightness(cv::Mat tmpcalcFrame) {
+		brightness= meanofBri(tmpcalcFrame);
+	}
+	const double getBrightness() const {
+		return brightness;
+	}
+	void DisplayCameraFrame(HWND hWnd, HWND hWn,HWND calframe)
 	{
 		cap.open(0);
 		if (!cap.isOpened()) {
@@ -38,8 +53,9 @@ public:
 		}
 		HDC hdc = GetDC(hWnd); // Obtain device context for the window
 		HDC hdc1 = GetDC(hWn); // Obtain device context for the window
+		HDC hdcCalframe = GetDC(calframe);
 		cv::Mat dframe, frame;
-		while (!stopCamera) {
+		while (!getstopCamera()) {
 			cap >> dframe;
 			if (!dframe.empty()) {
 				cv::flip(dframe, frame, 1);//flip
@@ -53,10 +69,18 @@ public:
 				cv::Mat tmpFrameCropped;
 				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
 				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(260, 215));
-				meancv = meanofBri(tmpFrameCropped);
-				brightData.push_back(meancv);
-				std::wstring meanString = std::to_wstring(meancv);
+				// Show calfram portion in zoomfram
+				drawRectangle(tmpFrameCropped, 50, 50, 150, 150, cv::Scalar(0, 0, 255), 1);
+				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(50, 50, 100, 100)); // Example crop - adjust as needed
+				cv::Mat tmpcalcFrame;
+				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
+				cv::resize(tmpcalcFrame, tmpcalcFrame, cv::Size(260, 215));
+
+				setBrightness(tmpcalcFrame);
+				brightData.push_back(getBrightness());
+				std::wstring meanString = std::to_wstring(getBrightness());
 				OutputDebugStringW(meanString.c_str());
+
 				// Display original frame in g_hFrame1
 				HBITMAP hBitmapOriginal = CreateBitmap(tmpFrameOriginal.cols, tmpFrameOriginal.rows, 1, 32, tmpFrameOriginal.data);
 				HDC memDCOriginal = CreateCompatibleDC(hdc);
@@ -71,6 +95,13 @@ public:
 				BitBlt(hdc1, 0, 0, tmpFrameCropped.cols, tmpFrameCropped.rows, memDCCropped, 0, 0, SRCCOPY);
 				DeleteDC(memDCCropped);
 				DeleteObject(hBitmapCropped);
+				// Display calframe portion in zoomfram
+				HBITMAP hBitmapcalframe = CreateBitmap(tmpcalcFrame.cols, tmpcalcFrame.rows, 1, 32, tmpcalcFrame.data);
+				HDC memDCCalcframe = CreateCompatibleDC(hdcCalframe);
+				SelectObject(memDCCalcframe, hBitmapcalframe);
+				BitBlt(hdcCalframe, 0, 0, tmpcalcFrame.cols, tmpcalcFrame.rows, memDCCalcframe, 0, 0, SRCCOPY);
+				DeleteDC(memDCCalcframe);
+				DeleteObject(hBitmapcalframe);
 			}
 			InvalidateRect(hWnd, NULL, TRUE);
 			if (cv::waitKey(1) == 'q') {
@@ -79,8 +110,9 @@ public:
 			}
 		}
 		cap.release();
-		ReleaseDC(hWnd, hdc);
+		ReleaseDC(hWnd, hdc); 
 		ReleaseDC(hWn, hdc1);
+		ReleaseDC(calframe, hdcCalframe);
 	}
 
 
