@@ -42,7 +42,7 @@ public:
 						setStopDeposition(false); // Stop the thread
 					}
 				}
-				daq.start(nullptr, "Dev2/ao0",pzt);
+				daq.analogOut("Dev2/ao0",pzt);
 				});
 		}
 	}

@@ -215,12 +215,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case ID_BTN_LASER_ON:
 			{
-				daq.digitalOut(nullptr, "Dev2/port0/line0", true);
+				daq.digitalOut("Dev2/port0/line0", true);
 			}
 				break;
 			case ID_BTN_LASER_OFF:
 			{
-				daq.digitalOut(nullptr, "Dev2/port0/line0", false);
+				daq.digitalOut("Dev2/port0/line0", false);
 			}
 			break;
 			case IDM_ABOUT:

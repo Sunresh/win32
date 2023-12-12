@@ -1,57 +1,66 @@
 #ifndef DAQ_SIGNAL_H
 #define DAQ_SIGNAL_H
-#include <nidaqmx.h>
-#include "framework.h"
-#include "WindowsProject1.h"
 
-using namespace std;
+#include <nidaqmx.h>
+#include <iostream>
+#include <string>
+#include <vector>
 
 class MyDaq {
 private:
-	bool isStart;
+	TaskHandle analogTask;
+	TaskHandle digitalTask;
+
 public:
-	MyDaq(): isStart(true) {}
-	void start(TaskHandle task1 = nullptr, const char dev0[64] = "Dev2/ao0", const double voltage = 0) {
-		DAQmxCreateTask("", &task1);
-		DAQmxCreateAOVoltageChan(task1, dev0, "ao_channel", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
-		DAQmxCfgSampClkTiming(task1, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
-		DAQmxWriteAnalogF64(task1, 1, true, 10.0, DAQmx_Val_GroupByChannel, &voltage, nullptr, nullptr);
-		DAQmxClearTask(task1);
+	MyDaq() : analogTask(nullptr), digitalTask(nullptr) {
+		// Create tasks for analog and digital outputs
+		DAQmxCreateTask("AnalogTask", &analogTask);
+		DAQmxCreateTask("DigitalTask", &digitalTask);
 	}
-	void digitalOut(TaskHandle task = nullptr, const char* digital = "Dev2/port0/line0", bool boolean = true) {
-		int32 error = 0;
-		if (task == nullptr) {
-			DAQmxCreateTask("", &task);
+
+	~MyDaq() {
+		// Clear tasks on destruction
+		if (analogTask != nullptr) {
+			DAQmxStopTask(analogTask);
+			DAQmxClearTask(analogTask);
 		}
-		DAQmxCreateDOChan(task, digital, "", DAQmx_Val_ChanForAllLines);
-		uInt32 data = boolean ? 1 : 0;
-		DAQmxWriteDigitalU32(task, 1, 1, 10.0, DAQmx_Val_GroupByChannel, &data, nullptr, nullptr);
-		DAQmxStopTask(task);
-		DAQmxClearTask(task);
+		if (digitalTask != nullptr) {
+			DAQmxStopTask(digitalTask);
+			DAQmxClearTask(digitalTask);
+		}
+	}
+
+	void addAnalogChannel(const char* channel) {
+		DAQmxCreateAOVoltageChan(analogTask, channel, "", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
+	}
+
+	void addDigitalChannel(const char* channel) {
+		DAQmxCreateDOChan(digitalTask, channel, "", DAQmx_Val_ChanForAllLines);
+	}
+
+	void startTasks() {
+		DAQmxStartTask(analogTask);
+		DAQmxStartTask(digitalTask);
+	}
+
+	void analogOut(const char* channel, double voltage) {
+		uInt32 writtenSamples;
+		DAQmxWriteAnalogScalarF64(analogTask, true, 10.0, voltage, nullptr);
+	}
+
+	void digitalOut(const char* channel, bool value) {
+		uInt32 data = value ? 1 : 0;
+		DAQmxWriteDigitalScalarU32(digitalTask, true, 10.0, data, nullptr);
+	}
+
+	void handleError(int32 error) {
 		if (DAQmxFailed(error)) {
 			char errBuff[2048] = { '\0' };
 			DAQmxGetExtendedErrorInfo(errBuff, 2048);
 
-			// Convert char* to wchar_t*
-			size_t errBuffLength = strlen(errBuff) + 1;
-			size_t convertedChars = 0;
-			wchar_t* wideErrBuff = new wchar_t[errBuffLength];
-			mbstowcs_s(&convertedChars, wideErrBuff, errBuffLength, errBuff, _TRUNCATE);
-
-			OutputDebugStringW(L"DAQmx Error: ");
-			OutputDebugStringW(wideErrBuff);
-			OutputDebugStringW(L"\n");
-
-			delete[] wideErrBuff; // Free allocated memory
-
-			if (task != nullptr) {
-				DAQmxStopTask(task);
-				DAQmxClearTask(task);
-			}
+			std::cerr << "DAQmx Error: " << errBuff << std::endl;
 		}
-
 	}
-
 };
 
 #endif // DAQ_SIGNAL_H
