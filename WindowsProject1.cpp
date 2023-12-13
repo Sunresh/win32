@@ -4,6 +4,7 @@
 #include "camera.cpp"
 #include "daqSignal.h"
 #include "Deposition.h"
+#include "MasterThread.h"
 
 #define MAX_LOADSTRING 100
 #define ID_BTN_CAMERA_ON 130
@@ -11,15 +12,19 @@
 #define ID_BTN_LASER_ON 132
 #define ID_BTN_LASER_OFF 133
 #define IDC_STATIC_HEIGHT 134
+#define ID_BTN_DEPOSITION_ON 135
+#define ID_BTN_DEPOSITION_OFF 136
+#define IDC_YOUR_LOWER_TH_STATIC_ID 137
+#define ID_CAMERA_OPTION 138
+
 bool stopCamera = true;
 double meancv;
 cv::VideoCapture cap;
 std::deque<double> brightData;
 Camera cam;
-
 MyDaq daq;
 Deposition Dp;
-
+MasterThread mThread;
 HWND g_hFrame1;
 HWND zoomfram,calFrame, info;
 HWND graphframe;
@@ -34,6 +39,36 @@ INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 void UpdateHeightText(HWND hWndStatic, double heightValue);
 
 std::atomic<bool> stopGraphUpdate(true);
+std::atomic<bool> isDeposition(true);
+double pztVolt = 0.0;
+double steps = 1000;
+bool isIncrease = true;
+long dep = 10;
+void depositionFunction() {
+	while (isDeposition) {
+		if (pztVolt < 4 && isIncrease) {
+			pztVolt += 1 / steps;
+		}
+		if (pztVolt >= 4.00) {
+			pztVolt = 3.999999;
+			isIncrease = false;
+		}
+		if (pztVolt < 0) {
+			pztVolt = 0;
+			return;
+		}
+		if (pztVolt > 0 && !isIncrease) {
+			pztVolt -= 1 / steps;
+		}
+		HWND hWndLowerTh = GetDlgItem(info, IDC_YOUR_LOWER_TH_STATIC_ID);
+		if (hWndLowerTh != NULL) {
+			std::wstring newText = L"Lower Th.: " + std::to_wstring(pztVolt);
+			SetWindowTextW(hWndLowerTh, newText.c_str());
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(dep)); 
+	}
+}
+
 void UpdateGraph(HWND graphframe) {
 	const std::deque<double>& brightData = cam.GetBrightData();
 	Dp.start();
@@ -80,17 +115,15 @@ void UpdateGraph(HWND graphframe) {
 			DeleteObject(hGraphPen);
 			ReleaseDC(graphframe, graphf);
 		}
-		
-		double pzt = Dp.getPZT();
+		double bright = cam.getBrightness();
 		HWND hWndHeight = GetDlgItem(info, IDC_STATIC_HEIGHT);
-		UpdateHeightText(hWndHeight, pzt);
+		if (hWndHeight != NULL) {
+			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
+			SetWindowTextW(hWndHeight, newText.c_str());
+		}
 		//std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Adjust the delay as needed
 	}
 }
-
-
-
-
 
 
 
@@ -162,26 +195,30 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 47, 255, 30, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 79, 255, 30, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 111, 255, 30, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 143, 255, 30, hFrame, NULL, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 175, 255, 30, hFrame, NULL, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 143, 255, 30, hFrame, (HMENU)ID_BTN_DEPOSITION_ON, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 175, 255, 30, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
 
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		calFrame = CreateWindowW(L"BUTTON", L"Calculation Area", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 782, 2, 260, 215, hWnd, NULL, NULL, NULL);
 
-		// Assuming 'hWnd' is the parent window handle
-
-		info = CreateWindowW(L"BUTTON", L"Information", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 215, 260, 215, hWnd, NULL, NULL, NULL);
+		info = CreateWindowW(L"BUTTON", L"Information", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 215, 260, 415, hWnd, NULL, NULL, NULL);
 		
-		HWND hWndHeight = CreateWindowW(L"STATIC", L"Height: 100", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 20, 240, 20, info, (HMENU)IDC_STATIC_HEIGHT, NULL, NULL);
-		UpdateHeightText(hWndHeight, cam.getBrightness());
+		HWND hWndHeight = CreateWindowW(L"STATIC", L"Brightness: ", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 20, 240, 20, info, (HMENU)IDC_STATIC_HEIGHT, NULL, NULL);
 		
 		CreateWindowW(L"STATIC", L"E.Volt: 5V", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 50, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"PZT volt: 10V", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 80, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"Dep. Time: 60s", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 110, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"Upper Th.: 75", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 140, 240, 20, info, NULL, NULL, NULL);
-		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, NULL, NULL, NULL);
+		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, (HMENU)IDC_YOUR_LOWER_TH_STATIC_ID, NULL, NULL);
 
+		HWND hCombo = CreateWindowW(L"COMBOBOX", NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST,10, 200, 240, 200, info, (HMENU)ID_CAMERA_OPTION, NULL, NULL);
+		// Add items to the combo box
+		SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"Option 1");
+		SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"Option 2");
+		SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"Option 3");
+		// Select the default item
+		SendMessageW(hCombo, CB_SETCURSEL, 0, 0);
 		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 520, 215, hWnd, NULL, NULL, NULL);
 
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
@@ -221,6 +258,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case ID_BTN_LASER_OFF:
 			{
 				daq.digitalOut("Dev2/port0/line0", false);
+				depositionFunction();
+			}
+			break;
+			case ID_BTN_DEPOSITION_ON:
+			{
+				isDeposition = true;
+				mThread.addTask(depositionFunction);
+				mThread.start();
+			}
+			break;
+			case ID_BTN_DEPOSITION_OFF:
+			{
+				isDeposition = false;
+				mThread.addTask([] {});
+				mThread.stop();
 			}
 			break;
 			case IDM_ABOUT:
