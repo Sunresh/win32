@@ -190,13 +190,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 	case WM_CREATE:
 	{
+		const int buttonWidth = 255;
+		const int buttonHeight = 30;
+		const int buttonSpacing = 32;
+
 		HWND hFrame = CreateWindowW(L"BUTTON", L"Menu", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 2, 260, 215, hWnd, NULL, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Camera ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15, 255, 30, hFrame, (HMENU)ID_BTN_CAMERA_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 47, 255, 30, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 79, 255, 30, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 111, 255, 30, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 143, 255, 30, hFrame, (HMENU)ID_BTN_DEPOSITION_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 175, 255, 30, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
+
+		LPCWSTR buttonLabels[] = {
+		L"Camera ON", L"Camera OFF",
+		L"Laser ON", L"Laser OFF",
+		L"Deposition ON", L"Deposition OFF"
+		};
+
+		const int ids[] = {
+		ID_BTN_CAMERA_ON, ID_BTN_CAMERA_OFF,
+		ID_BTN_LASER_ON, ID_BTN_LASER_OFF,
+		ID_BTN_DEPOSITION_ON, ID_BTN_DEPOSITION_OFF
+		};
+
+		for (int i = 0; i < 6; i++) {
+			CreateWindowW(L"BUTTON", buttonLabels[i], WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (buttonSpacing * i), buttonWidth, buttonHeight, hFrame, (HMENU)ids[i], NULL, NULL);
+		}
 
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
@@ -252,13 +266,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case ID_BTN_LASER_ON:
 			{
+				daq.addDigitalChannel("Dev2/port0/line0");
 				daq.digitalOut("Dev2/port0/line0", true);
+				daq.startTasks();
 			}
 				break;
 			case ID_BTN_LASER_OFF:
 			{
+				daq.addDigitalChannel("Dev2/port0/line0");
 				daq.digitalOut("Dev2/port0/line0", false);
-				depositionFunction();
+				daq.startTasks();
 			}
 			break;
 			case ID_BTN_DEPOSITION_ON:
