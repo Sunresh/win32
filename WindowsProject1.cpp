@@ -4,7 +4,7 @@
 #include "camera.cpp"
 #include "daqSignal.h"
 #include "Deposition.h"
-#include "MasterThread.h"
+#include <atomic>
 
 #define MAX_LOADSTRING 100
 #define ID_BTN_CAMERA_ON 130
@@ -24,7 +24,6 @@ std::deque<double> brightData;
 Camera cam;
 MyDaq daq;
 Deposition Dp;
-MasterThread mThread;
 HWND g_hFrame1;
 HWND zoomfram,calFrame, info;
 HWND graphframe;
@@ -40,32 +39,46 @@ void UpdateHeightText(HWND hWndStatic, double heightValue);
 
 std::atomic<bool> stopGraphUpdate(true);
 std::atomic<bool> isDeposition(true);
-double pztVolt = 0.0;
-double steps = 1000;
+std::atomic<double> pztVolt(0.0);
+std::atomic<double> pztMax(3.0);
+double steps = 100000;
 bool isIncrease = true;
-long dep = 10;
+long dep = 0.001;
 void depositionFunction() {
 	while (isDeposition) {
-		if (pztVolt < 4 && isIncrease) {
-			pztVolt += 1 / steps;
+		double currentVolt = pztVolt.load(); // Retrieve the current value atomically
+
+		if (currentVolt < pztMax && isIncrease) {
+			// Perform atomic increment
+			double newValue = currentVolt + (pztMax / steps);
+			while (!pztVolt.compare_exchange_weak(currentVolt, newValue)); // Try to update pztVolt atomically
 		}
-		if (pztVolt >= 4.00) {
-			pztVolt = 3.999999;
+
+		if (currentVolt > pztMax) {
+			while (!pztVolt.compare_exchange_weak(currentVolt, pztMax)); // Try to update pztVolt atomically
 			isIncrease = false;
 		}
-		if (pztVolt < 0) {
-			pztVolt = 0;
+
+		if (currentVolt < 0) {
+			while (!pztVolt.compare_exchange_weak(currentVolt, 0.0)); // Try to update pztVolt atomically
 			return;
 		}
-		if (pztVolt > 0 && !isIncrease) {
-			pztVolt -= 1 / steps;
+
+		if (currentVolt > 0 && !isIncrease) {
+			// Perform atomic decrement
+			double newValue = currentVolt - (pztMax / steps);
+			while (!pztVolt.compare_exchange_weak(currentVolt, newValue)); // Try to update pztVolt atomically
 		}
+
 		HWND hWndLowerTh = GetDlgItem(info, IDC_YOUR_LOWER_TH_STATIC_ID);
 		if (hWndLowerTh != NULL) {
-			std::wstring newText = L"Lower Th.: " + std::to_wstring(pztVolt);
+			std::wstring newText = L"Lower Th.: " + std::to_wstring(pztVolt.load()); // Atomic load operation
 			SetWindowTextW(hWndLowerTh, newText.c_str());
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(dep)); 
+		daq.addAnalogChannel("Dev2/ao0");
+		daq.analogOut("Dev2/ao00", pztVolt.load());
+		daq.startTasks();
+		std::this_thread::sleep_for(std::chrono::nanoseconds(dep));
 	}
 }
 
@@ -73,6 +86,7 @@ void UpdateGraph(HWND graphframe) {
 	const std::deque<double>& brightData = cam.GetBrightData();
 	Dp.start();
 	while (!stopGraphUpdate) {
+	
 		if (!brightData.empty()) {
 			HDC graphf = GetDC(graphframe);
 			RECT rect;
@@ -99,7 +113,7 @@ void UpdateGraph(HWND graphframe) {
 
 			for (int x = 0; x < rect.right; ++x) {
 				int dataIndex = static_cast<int>((static_cast<double>(x) / rect.right) * dataCount);
-				double y = brightData[dataIndex] * scaleY + 10; // Adjust additional offsets as needed
+				double y = brightData[dataIndex] * scaleY + 1; // Adjust additional offsets as needed
 
 				int startY = rect.bottom - static_cast<int>(y);
 				if (x == 0) {
@@ -110,11 +124,11 @@ void UpdateGraph(HWND graphframe) {
 				}
 				startX = x;
 			}
-
 			DeleteObject(hXAxisPen);
 			DeleteObject(hGraphPen);
 			ReleaseDC(graphframe, graphf);
 		}
+	
 		double bright = cam.getBrightness();
 		HWND hWndHeight = GetDlgItem(info, IDC_STATIC_HEIGHT);
 		if (hWndHeight != NULL) {
@@ -248,12 +262,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				cam.setStopCamera(false);
 				stopGraphUpdate = false; // Start updating the graph
+
+				// Start graph update in a detached thread
 				std::thread graphThread(UpdateGraph, graphframe);
-				graphThread.detach(); // Detach the graph thread to run independently
-				cam.DisplayCameraFrame(g_hFrame1, zoomfram, calFrame);				
-				InvalidateRect(hWnd, NULL, TRUE);
+				graphThread.detach();
+
+				// Start deposition function in a detached thread
+				std::thread nepa(depositionFunction);
+				nepa.detach();
+
+				// Start DisplayCameraFrame in a separate thread to avoid blocking
+				std::thread displayThread([&]() {
+					cam.DisplayCameraFrame(g_hFrame1, zoomfram, calFrame);
+					// Invalidate the window after the frame is displayed
+					InvalidateRect(hWnd, NULL, TRUE);
+					});
+				displayThread.detach();
 			}
-				break;
+			break;
 			case ID_BTN_CAMERA_OFF:
 			{
 				cam.setStopCamera(true);
@@ -281,15 +307,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case ID_BTN_DEPOSITION_ON:
 			{
 				isDeposition = true;
-				mThread.addTask(depositionFunction);
-				mThread.start();
+				std::thread nepa(depositionFunction);
+				nepa.detach();
 			}
 			break;
 			case ID_BTN_DEPOSITION_OFF:
 			{
 				isDeposition = false;
-				mThread.addTask([] {});
-				mThread.stop();
 			}
 			break;
 			case IDM_ABOUT:
