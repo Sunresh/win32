@@ -41,9 +41,9 @@ std::atomic<bool> stopGraphUpdate(true);
 std::atomic<bool> isDeposition(true);
 std::atomic<double> pztVolt(0.0);
 std::atomic<double> pztMax(3.0);
-double steps = 100000;
+double steps = 10000;
 bool isIncrease = true;
-long dep = 0.001;
+long dep = 0.0001;
 void depositionFunction() {
 	while (isDeposition) {
 		double currentVolt = pztVolt.load(); // Retrieve the current value atomically
@@ -135,7 +135,7 @@ void UpdateGraph(HWND graphframe) {
 			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
 			SetWindowTextW(hWndHeight, newText.c_str());
 		}
-		//std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Adjust the delay as needed
+		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Adjust the delay as needed
 	}
 }
 
@@ -208,23 +208,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		const int buttonHeight = 30;
 		const int buttonSpacing = 32;
 
+		// Create the group box
 		HWND hFrame = CreateWindowW(L"BUTTON", L"Menu", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 2, 260, 215, hWnd, NULL, NULL, NULL);
 
-		LPCWSTR buttonLabels[] = {
-		L"Camera ON", L"Camera OFF",
-		L"Laser ON", L"Laser OFF",
-		L"Deposition ON", L"Deposition OFF"
-		};
-
-		const int ids[] = {
-		ID_BTN_CAMERA_ON, ID_BTN_CAMERA_OFF,
-		ID_BTN_LASER_ON, ID_BTN_LASER_OFF,
-		ID_BTN_DEPOSITION_ON, ID_BTN_DEPOSITION_OFF
-		};
-
-		for (int i = 0; i < 6; i++) {
-			CreateWindowW(L"BUTTON", buttonLabels[i], WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (buttonSpacing * i), buttonWidth, buttonHeight, hFrame, (HMENU)ids[i], NULL, NULL);
-		}
+		// Create each button individually
+		CreateWindowW(L"BUTTON", L"Camera ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_ON, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + buttonSpacing, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (3 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (4 * buttonSpacing), (buttonWidth/2)-1, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_ON, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Dep Pause", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, (buttonWidth / 2)+3, 15 + (4 * buttonSpacing), buttonWidth/2, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (5 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
 
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
