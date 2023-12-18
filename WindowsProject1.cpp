@@ -5,17 +5,9 @@
 #include "daqSignal.h"
 #include "Deposition.h"
 #include <atomic>
+#include "dialog_cameraoption.h"
 
 #define MAX_LOADSTRING 100
-#define ID_BTN_CAMERA_ON 130
-#define ID_BTN_CAMERA_OFF 131
-#define ID_BTN_LASER_ON 132
-#define ID_BTN_LASER_OFF 133
-#define IDC_STATIC_HEIGHT 134
-#define ID_BTN_DEPOSITION_ON 135
-#define ID_BTN_DEPOSITION_OFF 136
-#define IDC_YOUR_LOWER_TH_STATIC_ID 137
-#define ID_CAMERA_OPTION 138
 
 bool stopCamera = true;
 double meancv;
@@ -204,21 +196,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 	case WM_CREATE:
 	{
-		const int buttonWidth = 255;
+		const int buttonWidth = 126;
 		const int buttonHeight = 30;
 		const int buttonSpacing = 32;
 
 		// Create the group box
 		HWND hFrame = CreateWindowW(L"BUTTON", L"Menu", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 2, 260, 215, hWnd, NULL, NULL, NULL);
-
 		// Create each button individually
 		CreateWindowW(L"BUTTON", L"Camera ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + buttonSpacing, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (3 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (4 * buttonSpacing), (buttonWidth/2)-1, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Dep Pause", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, (buttonWidth / 2)+3, 15 + (4 * buttonSpacing), buttonWidth/2, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (5 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth + 6, 15, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (1 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth+6, 15 + (1 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_ON, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Dep Pause", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth+6, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (3 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
+		HWND hCombo = CreateWindowW(L"BUTTON", L"tt", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (4 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_CAMERA_OPTION, NULL, NULL);
 
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
@@ -234,13 +226,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"STATIC", L"Upper Th.: 75", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 140, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, (HMENU)IDC_YOUR_LOWER_TH_STATIC_ID, NULL, NULL);
 
-		HWND hCombo = CreateWindowW(L"COMBOBOX", NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWNLIST,10, 200, 240, 200, info, (HMENU)ID_CAMERA_OPTION, NULL, NULL);
-		// Add items to the combo box
-		SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"Option 1");
-		SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"Option 2");
-		SendMessageW(hCombo, CB_ADDSTRING, 0, (LPARAM)L"Option 3");
-		// Select the default item
-		SendMessageW(hCombo, CB_SETCURSEL, 0, 0);
 		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 520, 215, hWnd, NULL, NULL, NULL);
 
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
@@ -256,7 +241,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				cam.setStopCamera(false);
 				stopGraphUpdate = false; // Start updating the graph
-
 				// Start graph update in a detached thread
 				std::thread graphThread(UpdateGraph, graphframe);
 				graphThread.detach();
@@ -310,10 +294,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				isDeposition = false;
 			}
 			break;
+
+			case ID_CAMERA_OPTION:
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_CAMERA_OPTIONS), hWnd, CameraOptions);
+				break;
 			case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+				break;
+			case IDM_EXIT:
                 DestroyWindow(hWnd);
                 break;
             default:
@@ -342,20 +330,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return (INT_PTR)TRUE;
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
 }
 
 void UpdateHeightText(HWND hWndStatic, double heightValue) {

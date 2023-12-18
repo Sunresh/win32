@@ -13,7 +13,7 @@ add_executable(YourProjectName WIN32
 			"WindowsProject1.cpp"
 			"WindowsProject1.rc"
 			"framework.h"
-			"Resource.h" "targetver.h" "camera.cpp" "daqSignal.h" "Deposition.h" )
+			"Resource.h" "targetver.h" "camera.cpp" "daqSignal.h" "Deposition.h"  "dialog_cameraoption.h" )
 
 link_directories("C:/opencv/build/x64/v16/lib")
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${NIDAQmx_LIBRARY} )
