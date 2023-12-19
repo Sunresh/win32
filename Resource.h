@@ -20,6 +20,11 @@
 #define IDC_FRAME_RATE_60      1006
 #define IDC_APPLY      1007
 #define IDC_CANCEL      1008
+#define HEIGHT20 1009
+#define HEIGHT22 1009
+#define HEIGHT24 1009
+
+
 
 #define ID_BTN_CAMERA_ON 130
 #define ID_BTN_CAMERA_OFF 131

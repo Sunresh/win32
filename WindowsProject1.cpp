@@ -5,12 +5,12 @@
 #include "daqSignal.h"
 #include "Deposition.h"
 #include <atomic>
-#include "dialog_cameraoption.h"
 
 #define MAX_LOADSTRING 100
 
 bool stopCamera = true;
 double meancv;
+HWND hCombo;
 cv::VideoCapture cap;
 std::deque<double> brightData;
 Camera cam;
@@ -28,7 +28,7 @@ BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 void UpdateHeightText(HWND hWndStatic, double heightValue);
-
+INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 std::atomic<bool> stopGraphUpdate(true);
 std::atomic<bool> isDeposition(true);
 std::atomic<double> pztVolt(0.0);
@@ -36,7 +36,18 @@ std::atomic<double> pztMax(3.0);
 double steps = 10000;
 bool isIncrease = true;
 long dep = 0.0001;
+wchar_t buttonText[256];
 void depositionFunction() {
+	if (hCombo != NULL) {
+		GetWindowTextW(hCombo, buttonText, sizeof(buttonText) / sizeof(buttonText[0]));
+		// Now 'buttonText' contains the text of the button
+
+		// Convert the button text to a double value
+		double newPztMax = _wtof(buttonText);
+
+		// Update the atomic variable 'pztMax'
+		pztMax.store(newPztMax);
+	}
 	while (isDeposition) {
 		double currentVolt = pztVolt.load(); // Retrieve the current value atomically
 
@@ -210,7 +221,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_ON, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Dep Pause", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth+6, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (3 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
-		HWND hCombo = CreateWindowW(L"BUTTON", L"tt", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (4 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_CAMERA_OPTION, NULL, NULL);
+		hCombo = CreateWindowW(L"BUTTON", L"30", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (4 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_CAMERA_OPTION, NULL, NULL);
 
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
@@ -351,4 +362,41 @@ void UpdateHeightText(HWND hWndStatic, double heightValue) {
 	swprintf_s(buffer, sizeof(buffer) / sizeof(buffer[0]), L"Height: %.2f", heightValue);
 	SetWindowTextW(hWndStatic, buffer);
 	RedrawWindow(hWndStatic, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+}
+
+INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_COMMAND:
+	{
+		int wmId = LOWORD(wParam);
+		switch (wmId)
+		{
+		case (IDC_CANCEL):
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		case IDC_APPLY:
+			// Determine which frame rate option is selected
+			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
+				const std::wstring br = L"30"; // Replace this with the appropriate value
+				if (hCombo != NULL) {
+					SetWindowTextW(hCombo, br.c_str());
+				}
+			}
+			else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
+				const std::wstring br = L"60"; // Replace this with the appropriate value
+				if (hCombo != NULL) {
+					SetWindowTextW(hCombo, br.c_str());
+				}
+			}
+		}
+	}
+	break;
+	case WM_CLOSE: // Handle the close message for the dialog
+		EndDialog(hDlg, IDCANCEL); // IDCANCEL signals that the dialog was closed
+		return (INT_PTR)TRUE;
+	}
+	return (INT_PTR)FALSE;
 }
