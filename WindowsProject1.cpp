@@ -222,6 +222,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"BUTTON", L"Dep Pause", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth+6, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (3 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
 		hCombo = CreateWindowW(L"BUTTON", L"30", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (4 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_CAMERA_OPTION, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"EPV0", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (5 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_EPDV0, NULL, NULL);
+		CreateWindowW(L"BUTTON", L"PZTV0", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth + 6, 15 + (5 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_PZTV0, NULL, NULL);
 
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
@@ -285,11 +287,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				daq.digitalOut("Dev2/port0/line0", true);
 				daq.startTasks();
 			}
-				break;
+			break;
 			case ID_BTN_LASER_OFF:
 			{
 				daq.addDigitalChannel("Dev2/port0/line0");
 				daq.digitalOut("Dev2/port0/line0", false);
+				daq.startTasks();
+			}
+			break;
+			case ID_BTN_EPDV0:
+			{
+				daq.addAnalogChannel("Dev2/ao0");
+				daq.analogOut("Dev2/ao0", 0.0);
+				daq.startTasks();
+			}
+				break;
+			case ID_BTN_PZTV0:
+			{
+				daq.addAnalogChannel("Dev2/ao1");
+				daq.analogOut("Dev2/ao1", 0.0);
 				daq.startTasks();
 			}
 			break;
