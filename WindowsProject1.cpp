@@ -1,9 +1,6 @@
 #include "framework.h"
 #include "WindowsProject1.h"
 #include "opencv2/opencv.hpp"
-#include "camera.cpp"
-#include "daqSignal.h"
-#include "Deposition.h"
 #include <atomic>
 
 #define MAX_LOADSTRING 100
@@ -15,7 +12,6 @@ cv::VideoCapture cap;
 std::deque<double> brightData;
 Camera cam;
 MyDaq daq;
-Deposition Dp;
 HWND g_hFrame1;
 HWND zoomfram,calFrame, info;
 HWND graphframe;
@@ -37,6 +33,7 @@ double steps = 10000;
 bool isIncrease = true;
 long dep = 0.0001;
 wchar_t buttonText[256];
+
 void depositionFunction() {
 	if (hCombo != NULL) {
 		GetWindowTextW(hCombo, buttonText, sizeof(buttonText) / sizeof(buttonText[0]));
@@ -87,51 +84,29 @@ void depositionFunction() {
 
 void UpdateGraph(HWND graphframe) {
 	const std::deque<double>& brightData = cam.GetBrightData();
-	Dp.start();
 	while (!stopGraphUpdate) {
-	
 		if (!brightData.empty()) {
 			HDC graphf = GetDC(graphframe);
 			RECT rect;
 			GetClientRect(graphframe, &rect);
 			FillRect(graphf, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
-
-			// Drawing code for X-axis (horizontal line at the center)
-			HPEN hXAxisPen = CreatePen(PS_SOLID, 1, RGB(200, 200, 200)); // Adjust color as needed
-			SelectObject(graphf, hXAxisPen);
-			MoveToEx(graphf, rect.left, rect.bottom / 2, NULL);
-			LineTo(graphf, rect.right, rect.bottom / 2);
-
-			// Drawing code for Y-axis (vertical line at the center)
-			MoveToEx(graphf, rect.right / 2, rect.top, NULL);
-			LineTo(graphf, rect.right / 2, rect.bottom);
-
-			// Drawing code for the graph
-			HPEN hGraphPen = CreatePen(PS_SOLID, 1, RGB(0, 0, 255)); // Adjust graph color as needed
-			SelectObject(graphf, hGraphPen);
-
-			int dataCount = static_cast<int>(brightData.size());
-			double scaleY = 0.8; // Adjust this scale factor as needed
-			int startX = 0;
-
-			for (int x = 0; x < rect.right; ++x) {
-				int dataIndex = static_cast<int>((static_cast<double>(x) / rect.right) * dataCount);
-				double y = brightData[dataIndex] * scaleY + 1; // Adjust additional offsets as needed
-
-				int startY = rect.bottom - static_cast<int>(y);
-				if (x == 0) {
-					MoveToEx(graphf, startX, startY, NULL);
-				}
-				else {
-					LineTo(graphf, x, startY);
-				}
-				startX = x;
+			double scaleY = 1;
+			int startIndex = 0;
+			int visibleDataPoints = rect.right;
+			int endIndex = std::min(startIndex + visibleDataPoints, static_cast<int>(brightData.size()));
+			for (int i = startIndex; i < endIndex - 1; ++i) {
+				double y1 = brightData[i];
+				double y2 = brightData[i + 1];
+				int startX = static_cast<int>((static_cast<double>(i - startIndex) / visibleDataPoints) * rect.right);
+				int endX = static_cast<int>((static_cast<double>(i + 1 - startIndex) / visibleDataPoints) * rect.right);
+				int startY = rect.bottom - static_cast<int>(y1 * scaleY);
+				int endY = rect.bottom - static_cast<int>(y2 * scaleY);
+				MoveToEx(graphf, startX, startY, NULL);
+				LineTo(graphf, endX, endY);
 			}
-			DeleteObject(hXAxisPen);
-			DeleteObject(hGraphPen);
+			startIndex++;
 			ReleaseDC(graphframe, graphf);
 		}
-	
 		double bright = cam.getBrightness();
 		HWND hWndHeight = GetDlgItem(info, IDC_STATIC_HEIGHT);
 		if (hWndHeight != NULL) {
@@ -258,10 +233,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				std::thread graphThread(UpdateGraph, graphframe);
 				graphThread.detach();
 
-				// Start deposition function in a detached thread
-				std::thread nepa(depositionFunction);
-				nepa.detach();
-
 				// Start DisplayCameraFrame in a separate thread to avoid blocking
 				std::thread displayThread([&]() {
 					cam.DisplayCameraFrame(g_hFrame1, zoomfram, calFrame);
@@ -276,8 +247,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				cam.setStopCamera(true);
 				stopCamera = true;
 				stopGraphUpdate = true; // Stop updating the graph
-				Dp.setStopDeposition(true);
-				Dp.stop();
 				
 			}
 				break;
@@ -314,6 +283,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				isDeposition = true;
 				std::thread nepa(depositionFunction);
 				nepa.detach();
+
 			}
 			break;
 			case ID_BTN_DEPOSITION_OFF:
