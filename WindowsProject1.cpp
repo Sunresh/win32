@@ -82,9 +82,9 @@ void depositionFunction() {
 	}
 }
 
-void UpdateGraph(HWND graphframe) {
-	const std::deque<double>& brightData = cam.GetBrightData();
+void UpdateGraph(HWND graphframe, std::vector<double> brightData) {
 	while (!stopGraphUpdate) {
+		std::vector<double> brightData = cam.GetBrightData();
 		if (!brightData.empty()) {
 			HDC graphf = GetDC(graphframe);
 			RECT rect;
@@ -94,6 +94,12 @@ void UpdateGraph(HWND graphframe) {
 			int startIndex = 0;
 			int visibleDataPoints = rect.right;
 			int endIndex = std::min(startIndex + visibleDataPoints, static_cast<int>(brightData.size()));
+
+			if (brightData.size() >= static_cast<size_t>(visibleDataPoints - startIndex)) {
+				// Erase elements from the beginning to keep the size within the limit
+				brightData.erase(brightData.begin(), brightData.begin() + (brightData.size() - (visibleDataPoints - startIndex)));
+			}
+
 			for (int i = startIndex; i < endIndex - 1; ++i) {
 				double y1 = brightData[i];
 				double y2 = brightData[i + 1];
@@ -113,7 +119,7 @@ void UpdateGraph(HWND graphframe) {
 			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
 			SetWindowTextW(hWndHeight, newText.c_str());
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Adjust the delay as needed
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 
@@ -214,7 +220,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"STATIC", L"Upper Th.: 75", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 140, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, (HMENU)IDC_YOUR_LOWER_TH_STATIC_ID, NULL, NULL);
 
-		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 520, 215, hWnd, NULL, NULL, NULL);
+		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 20, 215, hWnd, NULL, NULL, NULL);
 
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
@@ -228,15 +234,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case ID_BTN_CAMERA_ON:
 			{
 				cam.setStopCamera(false);
-				stopGraphUpdate = false; // Start updating the graph
-				// Start graph update in a detached thread
-				std::thread graphThread(UpdateGraph, graphframe);
+				stopGraphUpdate = false;
+
+				std::vector<double> brightData = cam.GetBrightData();
+				std::thread graphThread(UpdateGraph, graphframe, brightData);
 				graphThread.detach();
 
-				// Start DisplayCameraFrame in a separate thread to avoid blocking
 				std::thread displayThread([&]() {
 					cam.DisplayCameraFrame(g_hFrame1, zoomfram, calFrame);
-					// Invalidate the window after the frame is displayed
 					InvalidateRect(hWnd, NULL, TRUE);
 					});
 				displayThread.detach();

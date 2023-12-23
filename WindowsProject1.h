@@ -10,7 +10,7 @@ private:
 	cv::VideoCapture cap;
 	int getId;
 	bool stopCamera = true;
-	std::deque<double> brightData;
+	std::vector<double> brightData;
 	double brightness = 0;
 
 public:
@@ -38,20 +38,8 @@ public:
 		double meanCV = cv::mean(grayFrame)[0];
 		return meanCV;
 	}
-	const std::deque<double>& Camera::GetBrightData() const {
+	std::vector<double>& GetBrightData(){
 		return brightData;
-	}
-	void UpdateBrightData() {
-		// Perform modifications or updates to the deque here
-		// For example, to add a new point to the front:
-		brightData.push_front(getBrightness());
-
-		// Optionally, you might want to limit the size of brightData
-		// For example, to maintain a certain maximum size:
-		const size_t maxSize = 100; // Set your desired maximum size
-		while (brightData.size() > maxSize) {
-			brightData.pop_back();
-		}
 	}
 	void setBrightness(cv::Mat tmpcalcFrame) {
 		brightness = meanofBri(tmpcalcFrame);
@@ -92,8 +80,8 @@ public:
 
 				setBrightness(tmpcalcFrame);
 				brightData.push_back(getBrightness());
-				std::wstring meanString = std::to_wstring(getBrightness());
-				OutputDebugStringW(meanString.c_str());
+//				std::wstring meanString = std::to_wstring(getBrightness());
+//				OutputDebugStringW(meanString.c_str());
 
 				// Display original frame in g_hFrame1
 				HBITMAP hBitmapOriginal = CreateBitmap(tmpFrameOriginal.cols, tmpFrameOriginal.rows, 1, 32, tmpFrameOriginal.data);
