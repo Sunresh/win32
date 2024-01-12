@@ -2,7 +2,7 @@
 #include "WindowsProject1.h"
 #include "opencv2/opencv.hpp"
 #include <atomic>
-
+#include <algorithm>
 #define MAX_LOADSTRING 100
 
 bool stopCamera = true;
@@ -11,10 +11,11 @@ HWND hCombo;
 cv::VideoCapture cap;
 std::deque<double> brightData;
 Camera cam;
+Deposition deep;
 MyDaq daq;
 HWND g_hFrame1;
 HWND zoomfram,calFrame, info;
-HWND graphframe;
+HWND graphframe, pztGraphframe;
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
@@ -26,65 +27,15 @@ INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 void UpdateHeightText(HWND hWndStatic, double heightValue);
 INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 std::atomic<bool> stopGraphUpdate(true);
-std::atomic<bool> isDeposition(true);
 std::atomic<double> pztVolt(0.0);
-std::atomic<double> pztMax(3.0);
-double steps = 10000;
-bool isIncrease = true;
+
 long dep = 0.0001;
 wchar_t buttonText[256];
 
-void depositionFunction() {
-	if (hCombo != NULL) {
-		GetWindowTextW(hCombo, buttonText, sizeof(buttonText) / sizeof(buttonText[0]));
-		// Now 'buttonText' contains the text of the button
 
-		// Convert the button text to a double value
-		double newPztMax = _wtof(buttonText);
-
-		// Update the atomic variable 'pztMax'
-		pztMax.store(newPztMax);
-	}
-	while (isDeposition) {
-		double currentVolt = pztVolt.load(); // Retrieve the current value atomically
-
-		if (currentVolt < pztMax && isIncrease) {
-			// Perform atomic increment
-			double newValue = currentVolt + (pztMax / steps);
-			while (!pztVolt.compare_exchange_weak(currentVolt, newValue)); // Try to update pztVolt atomically
-		}
-
-		if (currentVolt > pztMax) {
-			while (!pztVolt.compare_exchange_weak(currentVolt, pztMax)); // Try to update pztVolt atomically
-			isIncrease = false;
-		}
-
-		if (currentVolt < 0) {
-			while (!pztVolt.compare_exchange_weak(currentVolt, 0.0)); // Try to update pztVolt atomically
-			return;
-		}
-
-		if (currentVolt > 0 && !isIncrease) {
-			// Perform atomic decrement
-			double newValue = currentVolt - (pztMax / steps);
-			while (!pztVolt.compare_exchange_weak(currentVolt, newValue)); // Try to update pztVolt atomically
-		}
-
-		HWND hWndLowerTh = GetDlgItem(info, IDC_YOUR_LOWER_TH_STATIC_ID);
-		if (hWndLowerTh != NULL) {
-			std::wstring newText = L"Lower Th.: " + std::to_wstring(pztVolt.load()); // Atomic load operation
-			SetWindowTextW(hWndLowerTh, newText.c_str());
-		}
-		daq.addAnalogChannel("Dev2/ao0");
-		daq.analogOut("Dev2/ao00", pztVolt.load());
-		daq.startTasks();
-		std::this_thread::sleep_for(std::chrono::nanoseconds(dep));
-	}
-}
-
-void UpdateGraph(HWND graphframe, std::vector<double> brightData) {
+void UpdateGraph(HWND graphframe) {
 	while (!stopGraphUpdate) {
-		std::vector<double> brightData = cam.GetBrightData();
+		std::deque<double> brightData = cam.GetBrightData();
 		if (!brightData.empty()) {
 			HDC graphf = GetDC(graphframe);
 			RECT rect;
@@ -94,12 +45,10 @@ void UpdateGraph(HWND graphframe, std::vector<double> brightData) {
 			int startIndex = 0;
 			int visibleDataPoints = rect.right;
 			int endIndex = std::min(startIndex + visibleDataPoints, static_cast<int>(brightData.size()));
-
 			if (brightData.size() >= static_cast<size_t>(visibleDataPoints - startIndex)) {
 				// Erase elements from the beginning to keep the size within the limit
 				brightData.erase(brightData.begin(), brightData.begin() + (brightData.size() - (visibleDataPoints - startIndex)));
 			}
-
 			for (int i = startIndex; i < endIndex - 1; ++i) {
 				double y1 = brightData[i];
 				double y2 = brightData[i + 1];
@@ -192,9 +141,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		const int buttonHeight = 30;
 		const int buttonSpacing = 32;
 
-		// Create the group box
 		HWND hFrame = CreateWindowW(L"BUTTON", L"Menu", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 2, 260, 215, hWnd, NULL, NULL, NULL);
-		// Create each button individually
 		CreateWindowW(L"BUTTON", L"Camera ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_ON, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth + 6, 15, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
 		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (1 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
@@ -209,7 +156,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
 		calFrame = CreateWindowW(L"BUTTON", L"Calculation Area", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 782, 2, 260, 215, hWnd, NULL, NULL, NULL);
-
 		info = CreateWindowW(L"BUTTON", L"Information", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 215, 260, 415, hWnd, NULL, NULL, NULL);
 		
 		HWND hWndHeight = CreateWindowW(L"STATIC", L"Brightness: ", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 20, 240, 20, info, (HMENU)IDC_STATIC_HEIGHT, NULL, NULL);
@@ -220,7 +166,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"STATIC", L"Upper Th.: 75", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 140, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, (HMENU)IDC_YOUR_LOWER_TH_STATIC_ID, NULL, NULL);
 
-		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 20, 215, hWnd, NULL, NULL, NULL);
+		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 620, 215, hWnd, NULL, NULL, NULL);
+		pztGraphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 430, 620, 215, hWnd, NULL, NULL, NULL);
 
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
@@ -235,9 +182,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				cam.setStopCamera(false);
 				stopGraphUpdate = false;
-
-				std::vector<double> brightData = cam.GetBrightData();
-				std::thread graphThread(UpdateGraph, graphframe, brightData);
+				std::thread graphThread(UpdateGraph, graphframe);
 				graphThread.detach();
 
 				std::thread displayThread([&]() {
@@ -285,15 +230,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case ID_BTN_DEPOSITION_ON:
 			{
-				isDeposition = true;
-				std::thread nepa(depositionFunction);
-				nepa.detach();
-
+				std::thread deposiiiii([&]() {
+					deep.setIsdeposition(true);
+					deep.depositionFunction(pztGraphframe, info);
+					InvalidateRect(hWnd, NULL, TRUE);
+					});
+				deposiiiii.detach();
 			}
 			break;
 			case ID_BTN_DEPOSITION_OFF:
 			{
-				isDeposition = false;
+				deep.setIsdeposition(false);
 			}
 			break;
 
@@ -385,8 +332,8 @@ INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lP
 		}
 	}
 	break;
-	case WM_CLOSE: // Handle the close message for the dialog
-		EndDialog(hDlg, IDCANCEL); // IDCANCEL signals that the dialog was closed
+	case WM_CLOSE:
+		EndDialog(hDlg, IDCANCEL);
 		return (INT_PTR)TRUE;
 	}
 	return (INT_PTR)FALSE;

@@ -3,6 +3,8 @@
 #include "framework.h"
 #include "WindowsProject1.h"
 #include "opencv2/opencv.hpp"
+#include <atomic>
+#include <exception>
 
 class Camera {
 private:
@@ -10,7 +12,7 @@ private:
 	cv::VideoCapture cap;
 	int getId;
 	bool stopCamera = true;
-	std::vector<double> brightData;
+	std::deque<double> brightData;
 	double brightness = 0;
 
 public:
@@ -38,7 +40,7 @@ public:
 		double meanCV = cv::mean(grayFrame)[0];
 		return meanCV;
 	}
-	std::vector<double>& GetBrightData(){
+	std::deque<double>& GetBrightData(){
 		return brightData;
 	}
 	void setBrightness(cv::Mat tmpcalcFrame) {
@@ -182,11 +184,111 @@ public:
 	}
 };
 
-class graphDraw {
+class Deposition {
 private:
 	int mal = 0;
 public:
-	void mayalau() {
+	std::deque<double>PPzz;
+	double pztMax = 3.0;
+	double newValue = 0.0;
+	double steps = 1000;
+	bool isIncrease = true;
+	bool isDeposition = true;
+	MyDaq daq;
+	void setIsdeposition(bool booly) {
+		isDeposition = booly;
+	}
+	bool getIsDepo() {
+		return isDeposition;
+	}
+	void depositionFunction(HWND pztGraphframe, HWND info) {
+		while (getIsDepo()) {
+			try {
+				if (newValue < pztMax && isIncrease) {
+					newValue += (pztMax / steps);
+				}
+				if (newValue > pztMax) {
+					newValue = pztMax;
+					isIncrease = false;
+				}
+				if (newValue < 0) {
+					newValue = 0;
+					isIncrease = true;
+					return;
+				}
+				if (newValue > 0 && !isIncrease) {
+					newValue -= (pztMax / steps);
+				}
+				HWND hWndLowerTh = GetDlgItem(info, IDC_YOUR_LOWER_TH_STATIC_ID);
+				if (hWndLowerTh != NULL) {
+					std::wstring newText = L"Lower Th.: " + std::to_wstring(newValue); // Atomic load operation
+					SetWindowTextW(hWndLowerTh, newText.c_str());
+				}
+				PPzz.push_back(newValue);
+				HDC graphf = GetDC(pztGraphframe);
+				RECT rect;
+				GetClientRect(pztGraphframe, &rect);
+				FillRect(graphf, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
+				double scaleY = 1;
+				int startIndex = 0;
+				int visibleDataPoints = rect.right;
+				int endIndex = std::min(startIndex + visibleDataPoints, static_cast<int>(PPzz.size()));
 
+				if (PPzz.size() >= static_cast<size_t>(visibleDataPoints - startIndex)) {
+					PPzz.erase(PPzz.begin(), PPzz.begin() + (PPzz.size() - (visibleDataPoints - startIndex)));
+				}
+				for (int i = startIndex; i < endIndex - 1; ++i) {
+					double y1 = PPzz[i];
+					double y2 = PPzz[i + 1];
+					double normalizedX1 = static_cast<double>(i - startIndex) / (visibleDataPoints - 1);
+					double normalizedX2 = static_cast<double>(i + 1 - startIndex) / (visibleDataPoints - 1);
+
+					int startX = static_cast<int>(normalizedX1 * rect.right);
+					int endX = static_cast<int>(normalizedX2 * rect.right);
+
+					// Scale the heights based on the available vertical space
+					int startY = rect.bottom - static_cast<int>(y1 * scaleY * rect.bottom / pztMax);
+					int endY = rect.bottom - static_cast<int>(y2 * scaleY * rect.bottom / pztMax);
+
+					// Clip the coordinates to ensure they are within the visible area
+					startX = std::max<int>(0, std::min<int>(rect.right, startX));
+					endX = std::max<int>(0, std::min<int>(rect.right, endX));
+					startY = std::max<int>(0, std::min<int>(rect.bottom, startY));
+					endY = std::max<int>(0, std::min<int>(rect.bottom, endY));
+
+					// Draw the line only if it's within the visible area
+					if (startX < rect.right && endX > 0 && startY < rect.bottom && endY > 0) {
+						MoveToEx(graphf, startX, startY, NULL);
+						LineTo(graphf, endX, endY);
+					}
+				}
+
+				startIndex++;
+				ReleaseDC(pztGraphframe, graphf);
+
+				daq.addAnalogChannel("Dev2/ao0");
+				daq.analogOut("Dev2/ao0", newValue);
+				daq.startTasks();
+
+				std::this_thread::sleep_for(std::chrono::microseconds(10));
+			}
+			catch (const std::exception& e) {
+				// Convert narrow string to wide string
+				int bufferSize = MultiByteToWideChar(CP_UTF8, 0, e.what(), -1, nullptr, 0);
+				if (bufferSize > 0) {
+					std::vector<wchar_t> wideBuffer(bufferSize);
+					MultiByteToWideChar(CP_UTF8, 0, e.what(), -1, wideBuffer.data(), bufferSize);
+
+					// Output the wide string
+					OutputDebugStringW(L"Exception occurred: ");
+					OutputDebugStringW(wideBuffer.data());
+					OutputDebugStringW(L"\n");
+				}
+			}
+			catch (...) {
+				OutputDebugStringW(L"Unknown exception occurred\n");
+			}
+
+		}
 	}
 };
