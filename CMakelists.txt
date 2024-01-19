@@ -14,7 +14,7 @@ add_executable(YourProjectName WIN32
 			"WindowsProject1.rc"
 			"framework.h"
 			"Resource.h" 
-			"targetver.h" )
+			"targetver.h"  "exportCSV.h" "daq.h" "brightnessCalculation.h")
 
 link_directories("C:/opencv/build/x64/v16/lib")
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} ${NIDAQmx_LIBRARY} )

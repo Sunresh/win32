@@ -11,66 +11,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "daq.h"
+#include "brightnessCalculation.h"
 
-
-class MyDaq {
-private:
-	TaskHandle analogTask;
-	TaskHandle digitalTask;
-
-public:
-	MyDaq() : analogTask(nullptr), digitalTask(nullptr) {
-		// Create tasks for analog and digital outputs
-		DAQmxCreateTask("AnalogTask", &analogTask);
-		DAQmxCreateTask("DigitalTask", &digitalTask);
-	}
-
-	~MyDaq() {
-		// Clear tasks on destruction
-		if (analogTask != nullptr) {
-			DAQmxStopTask(analogTask);
-			DAQmxClearTask(analogTask);
-		}
-		if (digitalTask != nullptr) {
-			DAQmxStopTask(digitalTask);
-			DAQmxClearTask(digitalTask);
-		}
-	}
-
-	void addAnalogChannel(const char* channel) {
-		DAQmxCreateAOVoltageChan(analogTask, channel, "", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
-	}
-
-	void addDigitalChannel(const char* channel) {
-		DAQmxCreateDOChan(digitalTask, channel, "", DAQmx_Val_ChanForAllLines);
-	}
-
-	void startTasks() {
-		DAQmxStartTask(analogTask);
-		DAQmxStartTask(digitalTask);
-	}
-
-	void analogOut(const char* channel, double voltage) {
-		uInt32 writtenSamples;
-		DAQmxWriteAnalogScalarF64(analogTask, true, 10.0, voltage, nullptr);
-	}
-
-	void digitalOut(const char* channel, bool value) {
-		uInt32 data = value ? 1 : 0;
-		DAQmxWriteDigitalScalarU32(digitalTask, true, 10.0, data, nullptr);
-	}
-
-	void handleError(int32 error) {
-		if (DAQmxFailed(error)) {
-			char errBuff[2048] = { '\0' };
-			DAQmxGetExtendedErrorInfo(errBuff, 2048);
-
-			std::cerr << "DAQmx Error: " << errBuff << std::endl;
-		}
-	}
-};
-
-void completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, double maxVertical = 333.0) {
+void completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, double maxVertical = 999.0) {
 	HDC graphf = GetDC(pztGraphframe);
 	RECT rect;
 	GetClientRect(pztGraphframe, &rect);
@@ -118,31 +62,6 @@ void completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, double max
 	startIndex++;
 	ReleaseDC(pztGraphframe, graphf);
 }
-class App {
-public:
-	static void logcat(const std::string& msg) {
-		OutputDebugStringA(msg.c_str());
-		OutputDebugStringA("\n");
-	}
-
-	static void logcat(double num) {
-		std::ostringstream oss;
-		oss << num;
-		logcat(oss.str());
-	}
-
-	static void logcat(int num) {
-		std::ostringstream oss;
-		oss << num;
-		logcat(oss.str());
-	}
-	static double getelapsedTime(std::chrono::time_point<std::chrono::high_resolution_clock> startTime) {
-		auto currentTime = std::chrono::high_resolution_clock::now();
-		std::chrono::duration<double> elapsed = currentTime - startTime;
-		return elapsed.count();
-	}
-
-};
 
 class Camera {
 public:
@@ -192,7 +111,8 @@ public:
 		return brightData;
 	}
 	void setBrightness(cv::Mat tmpcalcFrame) {
-		brightness = meanofBri(tmpcalcFrame);
+		BrightnessClass my = BrightnessClass(tmpcalcFrame);
+		brightness = my.differencesOf();
 	}
 	void setPztVolt(double dddd) {
 		pzt_vol = dddd;
@@ -309,80 +229,3 @@ public:
 
 
 };
-
-
-class Deposition {
-private:
-	int mal = 0;
-public:
-	std::deque<double>PPzz;
-	double pztMax = 3.0;
-	double newValue = 0.0;
-	double steps = 1000;
-	bool isIncrease = true;
-	bool isDeposition = true;
-	MyDaq daq;
-	ExportCSV csv;
-	void setIsdeposition(bool booly) {
-		isDeposition = booly;
-	}
-	bool getIsDepo() {
-		return isDeposition;
-	}
-	void drawingGraph(HWND pztGraphframe, HWND info, std::deque<double> lineData) {
-		HWND hWndLowerTh = GetDlgItem(info, IDC_YOUR_LOWER_TH_STATIC_ID);
-		if (hWndLowerTh != NULL) {
-			std::wstring newText = L"Lower Th.: " + std::to_wstring(newValue); // Atomic load operation
-			SetWindowTextW(hWndLowerTh, newText.c_str());
-		}
-		completeOfGraph(pztGraphframe, lineData);
-		daq.addAnalogChannel("Dev2/ao0");
-		daq.analogOut("Dev2/ao0", newValue);
-		daq.startTasks();
-	}
-	void depositionFunction(HWND pztGraphframe, HWND info) {
-		auto prev = std::chrono::high_resolution_clock::now();
-		while (getIsDepo()) {
-			try {
-				if (newValue < pztMax && isIncrease) {
-					newValue += (pztMax / steps);
-				}
-				if (newValue > pztMax) {
-					newValue = pztMax;
-					isIncrease = false;
-				}
-				if (newValue < 0) {
-					newValue = 0;
-					isIncrease = true;
-					return;
-				}
-				if (newValue > 0 && !isIncrease) {
-					newValue -= (pztMax / steps);
-				}
-				PPzz.push_back(newValue);
-				double ms = App::getelapsedTime(prev);
-				csv.saveCSV(PPzz, ms);
-				drawingGraph(pztGraphframe,info,PPzz);
-				//std::this_thread::sleep_for(std::chrono::microseconds(10));
-			}
-			catch (const std::exception& e) {
-				// Convert narrow string to wide string
-				int bufferSize = MultiByteToWideChar(CP_UTF8, 0, e.what(), -1, nullptr, 0);
-				if (bufferSize > 0) {
-					std::vector<wchar_t> wideBuffer(bufferSize);
-					MultiByteToWideChar(CP_UTF8, 0, e.what(), -1, wideBuffer.data(), bufferSize);
-
-					// Output the wide string
-					OutputDebugStringW(L"Exception occurred: ");
-					OutputDebugStringW(wideBuffer.data());
-					OutputDebugStringW(L"\n");
-				}
-			}
-			catch (...) {
-				OutputDebugStringW(L"Unknown exception occurred\n");
-			}
-
-		}
-	}
-};
-
