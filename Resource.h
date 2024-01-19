@@ -36,7 +36,8 @@
 #define IDC_YOUR_LOWER_TH_STATIC_ID 137
 #define ID_CAMERA_OPTION 138
 #define ID_BTN_EPDV0 139
-#define ID_BTN_PZTV0 140
+#define ID_BTN_PZTV0 140 
+#define IDC_PPZZ 141
 
 
 #define IDC_MYICON				2

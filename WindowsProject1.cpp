@@ -36,37 +36,20 @@ wchar_t buttonText[256];
 void UpdateGraph(HWND graphframe) {
 	while (!stopGraphUpdate) {
 		std::deque<double> brightData = cam.GetBrightData();
-		if (!brightData.empty()) {
-			HDC graphf = GetDC(graphframe);
-			RECT rect;
-			GetClientRect(graphframe, &rect);
-			FillRect(graphf, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
-			double scaleY = 1;
-			int startIndex = 0;
-			int visibleDataPoints = rect.right;
-			int endIndex = std::min(startIndex + visibleDataPoints, static_cast<int>(brightData.size()));
-			if (brightData.size() >= static_cast<size_t>(visibleDataPoints - startIndex)) {
-				// Erase elements from the beginning to keep the size within the limit
-				brightData.erase(brightData.begin(), brightData.begin() + (brightData.size() - (visibleDataPoints - startIndex)));
-			}
-			for (int i = startIndex; i < endIndex - 1; ++i) {
-				double y1 = brightData[i];
-				double y2 = brightData[i + 1];
-				int startX = static_cast<int>((static_cast<double>(i - startIndex) / visibleDataPoints) * rect.right);
-				int endX = static_cast<int>((static_cast<double>(i + 1 - startIndex) / visibleDataPoints) * rect.right);
-				int startY = rect.bottom - static_cast<int>(y1 * scaleY);
-				int endY = rect.bottom - static_cast<int>(y2 * scaleY);
-				MoveToEx(graphf, startX, startY, NULL);
-				LineTo(graphf, endX, endY);
-			}
-			startIndex++;
-			ReleaseDC(graphframe, graphf);
-		}
+		std::deque<double> pzt = cam.GetPZTvolt();
+		completeOfGraph(graphframe, brightData);
+		completeOfGraph(pztGraphframe, pzt,10);
 		double bright = cam.getBrightness();
 		HWND hWndHeight = GetDlgItem(info, IDC_STATIC_HEIGHT);
 		if (hWndHeight != NULL) {
 			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
 			SetWindowTextW(hWndHeight, newText.c_str());
+		}
+		double gg = cam.getUpdateofPzt();
+		HWND hwndPP = GetDlgItem(info, IDC_PPZZ);
+		if (hwndPP != NULL) {
+			std::wstring newText = L"PZTvolt: " + std::to_wstring(gg);
+			SetWindowTextW(hwndPP, newText.c_str());
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
@@ -165,6 +148,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		CreateWindowW(L"STATIC", L"Dep. Time: 60s", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 110, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"Upper Th.: 75", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 140, 240, 20, info, NULL, NULL, NULL);
 		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, (HMENU)IDC_YOUR_LOWER_TH_STATIC_ID, NULL, NULL);
+		HWND hwndPP =CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 200, 240, 20, info, (HMENU)IDC_PPZZ, NULL, NULL);
 
 		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 620, 215, hWnd, NULL, NULL, NULL);
 		pztGraphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 430, 620, 215, hWnd, NULL, NULL, NULL);
@@ -190,6 +174,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					InvalidateRect(hWnd, NULL, TRUE);
 					});
 				displayThread.detach();
+
 			}
 			break;
 			case ID_BTN_CAMERA_OFF:
@@ -230,17 +215,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case ID_BTN_DEPOSITION_ON:
 			{
-				std::thread deposiiiii([&]() {
-					deep.setIsdeposition(true);
-					deep.depositionFunction(pztGraphframe, info);
-					InvalidateRect(hWnd, NULL, TRUE);
-					});
-				deposiiiii.detach();
+				cam.setDepositionBool(true);
+				//std::thread deposiiiii([&]() {
+				//	deep.setIsdeposition(true);
+				//	deep.depositionFunction(pztGraphframe, info);
+				//	InvalidateRect(hWnd, NULL, TRUE);
+				//	});
+				//deposiiiii.detach();
 			}
 			break;
 			case ID_BTN_DEPOSITION_OFF:
 			{
-				deep.setIsdeposition(false);
+				cam.setDepositionBool(false);
+				//deep.setIsdeposition(false);
 			}
 			break;
 
