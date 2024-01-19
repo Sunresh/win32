@@ -14,6 +14,24 @@
 #include "daq.h"
 #include "brightnessCalculation.h"
 
+int getFullwidth() {
+	return GetSystemMetrics(SM_CXSCREEN);
+}
+int getFullheight() {
+	return GetSystemMetrics(SM_CYSCREEN);
+}
+
+HWND CreateButton(const wchar_t* text, int x, int y,int buttonWidth, int buttonHeight, HWND parent, int id, DWORD style = BS_PUSHBUTTON)
+{
+	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, buttonWidth, buttonHeight, parent, (HMENU)id, NULL, NULL);
+}
+
+HWND CreateStaticText(const wchar_t* text, int x, int y, int width, int height, HWND parent, int id, DWORD style = WS_BORDER)
+{
+	return CreateWindowW(L"STATIC", text, WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
+}
+
+
 void completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, double maxVertical = 999.0) {
 	HDC graphf = GetDC(pztGraphframe);
 	RECT rect;
@@ -123,7 +141,7 @@ public:
 	const double getUpdateofPzt() const {
 		return pzt_vol;
 	}
-	void DisplayCameraFrame(HWND hWnd, HWND hWn, HWND calframe)
+	void DisplayCameraFrame(HWND hWnd, HWND hWn)
 	{
 		cap.open(0);
 		if (!cap.isOpened()) {
@@ -133,30 +151,31 @@ public:
 		double maxvalue = 3;
 		double steps = 1000;
 		bool isIncrease = TRUE;
+		const int camwidth = std::round(0.4 * getFullwidth());
+		const int rowheight = std::round(0.45 * getFullheight());
+
 		HDC hdc = GetDC(hWnd); // Obtain device context for the window
 		HDC hdc1 = GetDC(hWn); // Obtain device context for the window
-		HDC hdcCalframe = GetDC(calframe);
 		cv::Mat dframe, frame;
 		while (!getstopCamera()) {
 			cap >> dframe;
 			if (!dframe.empty()) {
 				cv::flip(dframe, frame, 1);//flip
-				cv::resize(frame, frame, cv::Size(260, 215));
+				cv::resize(frame, frame, cv::Size(camwidth-10, rowheight-10));
 				// Show original frame in g_hFrame1
 				cv::Mat tmpFrameOriginal;
 				cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
 				// Show cropped portion in zoomfram
-				drawRectangle(tmpFrameOriginal, 50, 50, 150, 150, cv::Scalar(0, 0, 255), 1);
-				cv::Mat croppedFrame = frame(cv::Rect(50, 50, 100, 100)); // Example crop - adjust as needed
+				drawRectangle(tmpFrameOriginal, (camwidth - 10) / 3, (rowheight - 10) / 3, 2*(camwidth - 10) / 3, 2*(rowheight - 10) / 3, cv::Scalar(0, 0, 255), 1);
+				cv::Mat croppedFrame = frame(cv::Rect((camwidth - 10) / 3, (rowheight - 10) / 3, (camwidth - 10) / 3, (rowheight - 10) / 3)); 
 				cv::Mat tmpFrameCropped;
 				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
-				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(260, 215));
+				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(camwidth-10, rowheight-10));
 				// Show calfram portion in zoomfram
-				drawRectangle(tmpFrameCropped, 50, 50, 150, 150, cv::Scalar(0, 0, 255), 1);
-				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(50, 50, 100, 100)); // Example crop - adjust as needed
+				drawRectangle(tmpFrameCropped, (camwidth - 10)*0.45, (rowheight - 10)*0.45, (camwidth - 10)*0.55, (rowheight - 10)*0.55, cv::Scalar(0, 0, 255), 1);
+				cv::Mat calcFrame = tmpFrameCropped(cv::Rect((camwidth - 10) * 0.45, (rowheight - 10) * 0.45, (camwidth - 10) * 0.1, (rowheight - 10) * 0.1)); // Example crop - adjust as needed
 				cv::Mat tmpcalcFrame;
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
-				cv::resize(tmpcalcFrame, tmpcalcFrame, cv::Size(260, 215));
 
 				setBrightness(tmpcalcFrame);
 				brightData.push_back(getBrightness());
@@ -207,13 +226,6 @@ public:
 				BitBlt(hdc1, 0, 0, tmpFrameCropped.cols, tmpFrameCropped.rows, memDCCropped, 0, 0, SRCCOPY);
 				DeleteDC(memDCCropped);
 				DeleteObject(hBitmapCropped);
-				// Display calframe portion in zoomfram
-				HBITMAP hBitmapcalframe = CreateBitmap(tmpcalcFrame.cols, tmpcalcFrame.rows, 1, 32, tmpcalcFrame.data);
-				HDC memDCCalcframe = CreateCompatibleDC(hdcCalframe);
-				SelectObject(memDCCalcframe, hBitmapcalframe);
-				BitBlt(hdcCalframe, 0, 0, tmpcalcFrame.cols, tmpcalcFrame.rows, memDCCalcframe, 0, 0, SRCCOPY);
-				DeleteDC(memDCCalcframe);
-				DeleteObject(hBitmapcalframe);
 			}
 			InvalidateRect(hWnd, NULL, TRUE);
 			if (cv::waitKey(1) == 'q') {
@@ -224,7 +236,6 @@ public:
 		cap.release();
 		ReleaseDC(hWnd, hdc);
 		ReleaseDC(hWn, hdc1);
-		ReleaseDC(calframe, hdcCalframe);
 	}
 
 

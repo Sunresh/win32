@@ -7,14 +7,13 @@
 
 bool stopCamera = true;
 double meancv;
-HWND hCombo;
+HWND hCombo, hWndHeight, hwndPP, hFrame;
 cv::VideoCapture cap;
 std::deque<double> brightData;
 Camera cam;
-Deposition deep;
 MyDaq daq;
 HWND g_hFrame1;
-HWND zoomfram,calFrame, info;
+HWND zoomfram;
 HWND graphframe, pztGraphframe;
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING];
@@ -40,21 +39,20 @@ void UpdateGraph(HWND graphframe) {
 		completeOfGraph(graphframe, brightData);
 		completeOfGraph(pztGraphframe, pzt,10);
 		double bright = cam.getBrightness();
-		HWND hWndHeight = GetDlgItem(info, IDC_STATIC_HEIGHT);
+		HWND hWndHeight = GetDlgItem(hFrame, IDC_STATIC_HEIGHT);
 		if (hWndHeight != NULL) {
 			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
 			SetWindowTextW(hWndHeight, newText.c_str());
 		}
 		double gg = cam.getUpdateofPzt();
-		HWND hwndPP = GetDlgItem(info, IDC_PPZZ);
+		HWND hwndPP = GetDlgItem(hFrame, IDC_PPZZ);
 		if (hwndPP != NULL) {
 			std::wstring newText = L"PZTvolt: " + std::to_wstring(gg);
 			SetWindowTextW(hwndPP, newText.c_str());
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
-
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -120,38 +118,36 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 	case WM_CREATE:
 	{
-		const int buttonWidth = 126;
-		const int buttonHeight = 30;
-		const int buttonSpacing = 32;
+		const int buttonWidth = std::round(0.1 * getFullwidth());
+		const int camwidth = std::round(0.4 * getFullwidth());
+		const int buttonHeight = std::round(0.05 * getFullheight());
+		const int buttonSpacing = buttonHeight+2;
+		const int rowheight = std::round(0.45 * getFullheight());
 
-		HWND hFrame = CreateWindowW(L"BUTTON", L"Menu", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 2, 260, 215, hWnd, NULL, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Camera ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Camera OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth + 6, 15, buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_CAMERA_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Laser ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (1 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Laser OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth+6, 15 + (1 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_LASER_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition ON", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_ON, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Dep Pause", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth+6, 15 + (2 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"Deposition OFF", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (3 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_DEPOSITION_OFF, NULL, NULL);
-		hCombo = CreateWindowW(L"BUTTON", L"30", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (4 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_CAMERA_OPTION, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"EPV0", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 2, 15 + (5 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_EPDV0, NULL, NULL);
-		CreateWindowW(L"BUTTON", L"PZTV0", WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, buttonWidth + 6, 15 + (5 * buttonSpacing), buttonWidth, buttonHeight, hFrame, (HMENU)ID_BTN_PZTV0, NULL, NULL);
+		hFrame = CreateButton(L"Menu",1, 1, 260, getFullheight(), hWnd, NULL, BS_GROUPBOX);
+		CreateButton(L"Camera ON", 2, 1, buttonWidth, buttonHeight, hFrame, ID_BTN_CAMERA_ON);
+		CreateButton(L"Camera OFF", 2 , buttonSpacing,buttonWidth, buttonHeight, hFrame, ID_BTN_CAMERA_OFF);
+		CreateButton(L"Laser ON", 2, 2*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_LASER_ON);
+		CreateButton(L"Laser OFF", 2, 3*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_LASER_OFF);
+		CreateButton(L"Deposition ON",2, 4*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_DEPOSITION_ON);
+		CreateButton(L"Dep Pause", 2, 5*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_DEPOSITION_OFF);
+		CreateButton(L"Deposition OFF", 2, 6*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_DEPOSITION_OFF);
+		hCombo = CreateButton(L"30", 2, 7*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_CAMERA_OPTION);
+		CreateButton(L"EPV0", 2, 8*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_EPDV0);
+		CreateButton(L"PZTV0", 2, 9*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_PZTV0);
+		hWndHeight = CreateStaticText(L"Brightness: ",2, 10*buttonSpacing, buttonWidth, buttonHeight, hFrame,IDC_STATIC_HEIGHT);
+		CreateStaticText(L"E.Volt: 5V",2, 11*buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+		CreateStaticText(L"PZT volt: 10V", 2, 12*buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+		CreateStaticText(L"Dep. Time: 60s",2, 13*buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+		CreateStaticText(L"Upper Th.: 75", 2, 14*buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+		CreateStaticText(L"Lower Th.: 25", 2, 15*buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_YOUR_LOWER_TH_STATIC_ID);
+		hwndPP = CreateStaticText(L"Lower Th.: 25", 2, 16*buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_PPZZ);
 
-		g_hFrame1 = CreateWindowW(L"BUTTON", L"Camera", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 2, 260, 215, hWnd, NULL, NULL, NULL);
-		zoomfram = CreateWindowW(L"BUTTON", L"ZOOM", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 522, 2, 260, 215, hWnd, NULL, NULL, NULL);
-		calFrame = CreateWindowW(L"BUTTON", L"Calculation Area", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 782, 2, 260, 215, hWnd, NULL, NULL, NULL);
-		info = CreateWindowW(L"BUTTON", L"Information", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 2, 215, 260, 415, hWnd, NULL, NULL, NULL);
-		
-		HWND hWndHeight = CreateWindowW(L"STATIC", L"Brightness: ", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 20, 240, 20, info, (HMENU)IDC_STATIC_HEIGHT, NULL, NULL);
-		
-		CreateWindowW(L"STATIC", L"E.Volt: 5V", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 50, 240, 20, info, NULL, NULL, NULL);
-		CreateWindowW(L"STATIC", L"PZT volt: 10V", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 80, 240, 20, info, NULL, NULL, NULL);
-		CreateWindowW(L"STATIC", L"Dep. Time: 60s", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 110, 240, 20, info, NULL, NULL, NULL);
-		CreateWindowW(L"STATIC", L"Upper Th.: 75", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 140, 240, 20, info, NULL, NULL, NULL);
-		CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 170, 240, 20, info, (HMENU)IDC_YOUR_LOWER_TH_STATIC_ID, NULL, NULL);
-		HWND hwndPP =CreateWindowW(L"STATIC", L"Lower Th.: 25", WS_VISIBLE | WS_CHILD | WS_BORDER, 10, 200, 240, 20, info, (HMENU)IDC_PPZZ, NULL, NULL);
+		g_hFrame1 = CreateButton(L"Camera", buttonWidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
+		zoomfram = CreateButton(L"ZOOM", buttonWidth+ camwidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
 
-		graphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 215, 620, 215, hWnd, NULL, NULL, NULL);
-		pztGraphframe = CreateWindowW(L"BUTTON", L"Graph", WS_VISIBLE | WS_CHILD | BS_GROUPBOX, 262, 430, 620, 215, hWnd, NULL, NULL, NULL);
+		graphframe = CreateButton(L"Graph", buttonWidth, rowheight, 2*camwidth, 0.25*getFullheight(), hWnd, NULL, BS_GROUPBOX);
+		pztGraphframe = CreateButton(L"Graph", buttonWidth , 0.25 * getFullheight() +rowheight, 2*camwidth, 0.15*getFullheight(), hWnd, NULL, BS_GROUPBOX);
 
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
@@ -170,7 +166,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				graphThread.detach();
 
 				std::thread displayThread([&]() {
-					cam.DisplayCameraFrame(g_hFrame1, zoomfram, calFrame);
+					cam.DisplayCameraFrame(g_hFrame1, zoomfram);
 					InvalidateRect(hWnd, NULL, TRUE);
 					});
 				displayThread.detach();
@@ -181,7 +177,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				cam.setStopCamera(true);
 				stopCamera = true;
-				stopGraphUpdate = true; // Stop updating the graph
+				stopGraphUpdate = true;
 				
 			}
 				break;
