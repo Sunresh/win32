@@ -3,6 +3,7 @@
 #include "opencv2/opencv.hpp"
 #include <atomic>
 #include <algorithm>
+
 #define MAX_LOADSTRING 100
 
 bool stopCamera = true;
@@ -148,7 +149,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		graphframe = CreateButton(L"Graph", buttonWidth, rowheight, 2*camwidth, 0.25*getFullheight(), hWnd, NULL, BS_GROUPBOX);
 		pztGraphframe = CreateButton(L"Graph", buttonWidth , 0.25 * getFullheight() +rowheight, 2*camwidth, 0.15*getFullheight(), hWnd, NULL, BS_GROUPBOX);
-
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
 	break;
@@ -223,6 +223,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case ID_BTN_DEPOSITION_OFF:
 			{
 				cam.setDepositionBool(false);
+				CaptureAndSaveScreenshot(L"C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
 				//deep.setIsdeposition(false);
 			}
 			break;
@@ -245,6 +246,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
+		std::string loadedValue = preferenceManager.GetPreference("frame");
+		HWND hwndPP = GetDlgItem(hWnd, ID_CAMERA_OPTION);
+		if (hwndPP != NULL) {
+			std::wstring wideLoadedValue(loadedValue.begin(), loadedValue.end());
+			std::wstring newText = L"PZTvolt: " + wideLoadedValue;
+			SetWindowTextW(hwndPP, newText.c_str());
+		}
 
 		EndPaint(hWnd, &ps);
 	}
@@ -285,39 +293,3 @@ void UpdateHeightText(HWND hWndStatic, double heightValue) {
 	RedrawWindow(hWndStatic, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 }
 
-INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_COMMAND:
-	{
-		int wmId = LOWORD(wParam);
-		switch (wmId)
-		{
-		case (IDC_CANCEL):
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		case IDC_APPLY:
-			// Determine which frame rate option is selected
-			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
-				const std::wstring br = L"30"; // Replace this with the appropriate value
-				if (hCombo != NULL) {
-					SetWindowTextW(hCombo, br.c_str());
-				}
-			}
-			else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
-				const std::wstring br = L"60"; // Replace this with the appropriate value
-				if (hCombo != NULL) {
-					SetWindowTextW(hCombo, br.c_str());
-				}
-			}
-		}
-	}
-	break;
-	case WM_CLOSE:
-		EndDialog(hDlg, IDCANCEL);
-		return (INT_PTR)TRUE;
-	}
-	return (INT_PTR)FALSE;
-}

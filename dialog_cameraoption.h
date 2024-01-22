@@ -1,40 +1,38 @@
+#pragma once
 #include "framework.h"
 #include "WindowsProject1.h"
-int g_selectedFrameRate = 0;
+#include "preferencemanager.h"
 
 INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
+	PreferenceManager preferenceManager;
+
 	switch (message)
 	{
-	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
 	case WM_COMMAND:
+	{
 		int wmId = LOWORD(wParam);
 		switch (wmId)
 		{
-		case IDC_CANCEL:
-		{
+		case (IDC_CANCEL):
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
-		}
-		break;
 		case IDC_APPLY:
-		{
-			// Determine which frame rate option is selected
 			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
-				g_selectedFrameRate = 30; // Set the global variable to 30 fps
+				preferenceManager.SetPreference("frame", "3000");
+
 			}
 			else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
-				g_selectedFrameRate = 60; // Set the global variable to 60 fps
+				preferenceManager.SetPreference("frame", "60");
 			}
-			HWND hWndButton = GetDlgItem(hDlg, IDC_CANCEL); // Get the handle of the button
-			SetWindowTextW(hWndButton, L"New Button Text");
-			//EndDialog(hDlg, LOWORD(wParam));
-			//return (INT_PTR)TRUE;
 		}
-		break;
-		}
+	}
+	break;
+	case WM_CLOSE:
+		EndDialog(hDlg, IDCANCEL);
+		return (INT_PTR)TRUE;
 	}
 	return (INT_PTR)FALSE;
 }
+

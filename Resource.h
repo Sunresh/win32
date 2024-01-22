@@ -23,6 +23,8 @@
 #define HEIGHT20 1009
 #define HEIGHT22 1009
 #define HEIGHT24 1009
+#define IDC_EDIT_INPUT 1010
+#define IDD_CUSTOM_DIALOG 1011
 
 
 

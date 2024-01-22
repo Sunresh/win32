@@ -13,14 +13,19 @@
 #include <vector>
 #include "daq.h"
 #include "brightnessCalculation.h"
+#include <Windows.h>
+#include <wingdi.h>
+#include "dialog_cameraoption.h"
+#include "preferencemanager.h"
 
+PreferenceManager preferenceManager;
+std::string loadedValue;
 int getFullwidth() {
 	return GetSystemMetrics(SM_CXSCREEN);
 }
 int getFullheight() {
 	return GetSystemMetrics(SM_CYSCREEN);
 }
-
 HWND CreateButton(const wchar_t* text, int x, int y,int buttonWidth, int buttonHeight, HWND parent, int id, DWORD style = BS_PUSHBUTTON)
 {
 	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, buttonWidth, buttonHeight, parent, (HMENU)id, NULL, NULL);
@@ -31,6 +36,120 @@ HWND CreateStaticText(const wchar_t* text, int x, int y, int width, int height, 
 	return CreateWindowW(L"STATIC", text, WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
 }
 
+void mess(const wchar_t* text = L"Message") {
+	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
+}
+
+
+// Function to save preferences to the registry
+void SavePreferences(const wchar_t* keyName, const wchar_t* valueName, DWORD value) {
+	HKEY hKey;
+	if (RegCreateKeyExW(HKEY_CURRENT_USER, keyName, 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
+		RegSetValueExW(hKey, valueName, 0, REG_DWORD, reinterpret_cast<BYTE*>(&value), sizeof(DWORD));
+		RegCloseKey(hKey);
+	}
+}
+
+// Function to load preferences from the registry
+DWORD LoadPreferences(const wchar_t* keyName, const wchar_t* valueName, DWORD defaultValue) {
+	DWORD value = defaultValue;
+	HKEY hKey;
+	if (RegOpenKeyExW(HKEY_CURRENT_USER, keyName, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+		DWORD dataSize = sizeof(DWORD);
+		RegQueryValueExW(hKey, valueName, NULL, NULL, reinterpret_cast<BYTE*>(&value), &dataSize);
+		RegCloseKey(hKey);
+	}
+	return value;
+}
+
+INT_PTR CALLBACK CustomDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_INITDIALOG:
+		return TRUE; // Focus is set to the edit control on dialog initialization
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK) {
+			// OK button clicked, retrieve text from the edit control
+			wchar_t buffer[256];
+			GetDlgItemTextW(hwndDlg, IDC_EDIT_INPUT, buffer, sizeof(buffer) / sizeof(buffer[0]));
+
+			// Process the input as needed
+			MessageBoxW(NULL, buffer, L"User Input", MB_OK | MB_ICONINFORMATION);
+
+			// Close the dialog
+			EndDialog(hwndDlg, IDOK);
+		}
+		else if (LOWORD(wParam) == IDCANCEL) {
+			// Cancel button clicked
+			EndDialog(hwndDlg, IDCANCEL);
+		}
+		return TRUE; // Message handled
+	}
+	return FALSE; // Message not handled
+}
+
+void CaptureAndSaveScreenshot(const wchar_t* filePath)
+{
+	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+	HWND hWnd;
+	SavePreferences(L"Software\\YourAppName", L"WindowSize", 800);
+	DWORD loadedValue = LoadPreferences(L"Software\\YourAppName", L"WindowSize", 600);
+
+	wchar_t loadedValueString[20]; // Adjust the buffer size as needed
+	swprintf(loadedValueString, L"%u", loadedValue);
+
+	//mess(loadedValueString);
+	DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CUSTOM_DIALOG), NULL, CustomDialogProc);
+	// Output to debug
+
+	HDC hdcScreen = GetDC(NULL);
+	HDC hdcMem = CreateCompatibleDC(hdcScreen);
+	HBITMAP hBitmap = CreateCompatibleBitmap(hdcScreen, screenWidth, screenHeight);
+	SelectObject(hdcMem, hBitmap);
+
+	BitBlt(hdcMem, 0, 0, screenWidth, screenHeight, hdcScreen, 0, 0, SRCCOPY);
+
+	BITMAPINFO bmpInfo;
+	ZeroMemory(&bmpInfo, sizeof(BITMAPINFO));
+	bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmpInfo.bmiHeader.biWidth = screenWidth;
+	bmpInfo.bmiHeader.biHeight = -screenHeight;
+	bmpInfo.bmiHeader.biPlanes = 1;
+	bmpInfo.bmiHeader.biBitCount = 24;
+	bmpInfo.bmiHeader.biCompression = BI_RGB;
+
+	DWORD dataSize;
+	GetDIBits(hdcMem, hBitmap, 0, screenHeight, nullptr, &bmpInfo, DIB_RGB_COLORS);
+	dataSize = bmpInfo.bmiHeader.biSizeImage;
+
+	BYTE* buffer = new BYTE[dataSize];
+	GetDIBits(hdcMem, hBitmap, 0, screenHeight, buffer, &bmpInfo, DIB_RGB_COLORS);
+
+	// Add BMP file header
+	BITMAPFILEHEADER bmpFileHeader;
+	bmpFileHeader.bfType = 0x4D42;
+	bmpFileHeader.bfSize = sizeof(BITMAPFILEHEADER) + bmpInfo.bmiHeader.biSize + dataSize;
+	bmpFileHeader.bfReserved1 = 0;
+	bmpFileHeader.bfReserved2 = 0;
+	bmpFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + bmpInfo.bmiHeader.biSize;
+
+	HANDLE hFile = CreateFileW(filePath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+	if (hFile != INVALID_HANDLE_VALUE)
+	{
+		DWORD bytesWritten;
+		WriteFile(hFile, &bmpFileHeader, sizeof(BITMAPFILEHEADER), &bytesWritten, nullptr);
+		WriteFile(hFile, &bmpInfo.bmiHeader, sizeof(BITMAPINFOHEADER), &bytesWritten, nullptr);
+		WriteFile(hFile, buffer, dataSize, &bytesWritten, nullptr);
+		CloseHandle(hFile);
+	}
+
+	delete[] buffer;
+	DeleteObject(hBitmap);
+	DeleteDC(hdcMem);
+	ReleaseDC(NULL, hdcScreen);
+}
 
 void completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, double maxVertical = 999.0) {
 	HDC graphf = GetDC(pztGraphframe);
