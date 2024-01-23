@@ -37,3 +37,25 @@ void PreferenceManager::SetPreference(const std::string& key, const std::string&
     preferences[key] = value;
     SavePreferences();
 }
+
+// Function to save preferences to the registry
+void SavePreferences(const wchar_t* keyName, const wchar_t* valueName, DWORD value) {
+    HKEY hKey;
+    if (RegCreateKeyExW(HKEY_CURRENT_USER, keyName, 0, NULL, 0, KEY_SET_VALUE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
+        RegSetValueExW(hKey, valueName, 0, REG_DWORD, reinterpret_cast<BYTE*>(&value), sizeof(DWORD));
+        RegCloseKey(hKey);
+    }
+}
+
+// Function to load preferences from the registry
+DWORD LoadPreferences(const wchar_t* keyName, const wchar_t* valueName, DWORD defaultValue) {
+    DWORD value = defaultValue;
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, keyName, 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        DWORD dataSize = sizeof(DWORD);
+        RegQueryValueExW(hKey, valueName, NULL, NULL, reinterpret_cast<BYTE*>(&value), &dataSize);
+        RegCloseKey(hKey);
+    }
+    return value;
+}
+

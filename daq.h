@@ -1,5 +1,8 @@
-#pragma once
-#include "WindowsProject1.h"
+#ifndef DAQ_H
+#define DAQ_H
+
+#include <nidaqmx.h>
+#include <iostream>
 
 class MyDaq {
 public:
@@ -56,3 +59,5 @@ public:
 	}
 };
 
+
+#endif // !DAQ_H

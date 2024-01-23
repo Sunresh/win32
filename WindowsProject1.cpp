@@ -1,15 +1,28 @@
 #include "framework.h"
-#include "WindowsProject1.h"
-#include "opencv2/opencv.hpp"
 #include <atomic>
 #include <algorithm>
+#include "Camera.h"
+#include "PlotGraph.h"
+#include "ScreenRecord.h"
+#include "resource.h"
+#include "framework.h"
+#include <atomic>
+#include "exportCSV.h"
+#include <string>
+#include <nidaqmx.h>
+#include <iostream>
+#include <string>
+#include <vector>
+#include "daq.h"
+#include "brightnessCalculation.h"
+#include <Windows.h>
+#include "preferencemanager.h"
 
 #define MAX_LOADSTRING 100
 
 bool stopCamera = true;
 double meancv;
 HWND hCombo, hWndHeight, hwndPP, hFrame;
-cv::VideoCapture cap;
 std::deque<double> brightData;
 Camera cam;
 MyDaq daq;
@@ -24,8 +37,8 @@ ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
-void UpdateHeightText(HWND hWndStatic, double heightValue);
 INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+void UpdateHeightText(HWND hWndStatic, double heightValue);
 std::atomic<bool> stopGraphUpdate(true);
 std::atomic<double> pztVolt(0.0);
 
@@ -33,12 +46,30 @@ long dep = 0.0001;
 wchar_t buttonText[256];
 
 
+HWND CreateButton(const wchar_t* text, int x, int y, int buttonWidth, int buttonHeight, HWND parent, int id, DWORD style = BS_PUSHBUTTON)
+{
+	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, buttonWidth, buttonHeight, parent, (HMENU)id, NULL, NULL);
+}
+
+HWND CreateStaticText(const wchar_t* text, int x, int y, int width, int height, HWND parent, int id, DWORD style = WS_BORDER)
+{
+	return CreateWindowW(L"STATIC", text, WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
+}
+
+void mess(const wchar_t* text = L"Message") {
+	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
+}
+
+
+
+
 void UpdateGraph(HWND graphframe) {
 	while (!stopGraphUpdate) {
 		std::deque<double> brightData = cam.GetBrightData();
 		std::deque<double> pzt = cam.GetPZTvolt();
-		completeOfGraph(graphframe, brightData);
-		completeOfGraph(pztGraphframe, pzt,10);
+		PlotGraph pt;
+		pt.completeOfGraph(graphframe, brightData,999);
+		pt.completeOfGraph(pztGraphframe, pzt,10);
 		double bright = cam.getBrightness();
 		HWND hWndHeight = GetDlgItem(hFrame, IDC_STATIC_HEIGHT);
 		if (hWndHeight != NULL) {
@@ -119,13 +150,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
 	case WM_CREATE:
 	{
-		const int buttonWidth = std::round(0.1 * getFullwidth());
-		const int camwidth = std::round(0.4 * getFullwidth());
-		const int buttonHeight = std::round(0.05 * getFullheight());
+		const int buttonWidth = std::round(0.1 * GetSystemMetrics(SM_CXSCREEN));
+		const int camwidth = std::round(0.4 * GetSystemMetrics(SM_CXSCREEN));
+		const int buttonHeight = std::round(0.05 * GetSystemMetrics(SM_CYSCREEN));
 		const int buttonSpacing = buttonHeight+2;
-		const int rowheight = std::round(0.45 * getFullheight());
+		const int rowheight = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN));
 
-		hFrame = CreateButton(L"Menu",1, 1, 260, getFullheight(), hWnd, NULL, BS_GROUPBOX);
+		hFrame = CreateButton(L"Menu",1, 1, 260, GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
 		CreateButton(L"Camera ON", 2, 1, buttonWidth, buttonHeight, hFrame, ID_BTN_CAMERA_ON);
 		CreateButton(L"Camera OFF", 2 , buttonSpacing,buttonWidth, buttonHeight, hFrame, ID_BTN_CAMERA_OFF);
 		CreateButton(L"Laser ON", 2, 2*buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_LASER_ON);
@@ -147,8 +178,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_hFrame1 = CreateButton(L"Camera", buttonWidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
 		zoomfram = CreateButton(L"ZOOM", buttonWidth+ camwidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
 
-		graphframe = CreateButton(L"Graph", buttonWidth, rowheight, 2*camwidth, 0.25*getFullheight(), hWnd, NULL, BS_GROUPBOX);
-		pztGraphframe = CreateButton(L"Graph", buttonWidth , 0.25 * getFullheight() +rowheight, 2*camwidth, 0.15*getFullheight(), hWnd, NULL, BS_GROUPBOX);
+		graphframe = CreateButton(L"Graph", buttonWidth, rowheight, 2*camwidth, 0.25* GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
+		pztGraphframe = CreateButton(L"Graph", buttonWidth , 0.25 * GetSystemMetrics(SM_CYSCREEN) +rowheight, 2*camwidth, 0.15* GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
 	break;
@@ -223,7 +254,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case ID_BTN_DEPOSITION_OFF:
 			{
 				cam.setDepositionBool(false);
-				CaptureAndSaveScreenshot(L"C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
+				ScreenRecord sr;
+				sr.CaptureAndSaveScreenshot(L"C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
 				//deep.setIsdeposition(false);
 			}
 			break;
@@ -246,7 +278,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
-		std::string loadedValue = preferenceManager.GetPreference("frame");
+		PreferenceManager pr;
+		std::string loadedValue = pr.GetPreference("frame");
 		HWND hwndPP = GetDlgItem(hWnd, ID_CAMERA_OPTION);
 		if (hwndPP != NULL) {
 			std::wstring wideLoadedValue(loadedValue.begin(), loadedValue.end());
@@ -293,3 +326,60 @@ void UpdateHeightText(HWND hWndStatic, double heightValue) {
 	RedrawWindow(hWndStatic, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
 }
 
+INT_PTR CALLBACK CustomDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_INITDIALOG:
+		return TRUE; // Focus is set to the edit control on dialog initialization
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK) {
+			// OK button clicked, retrieve text from the edit control
+			wchar_t buffer[256];
+			GetDlgItemTextW(hwndDlg, IDC_EDIT_INPUT, buffer, sizeof(buffer) / sizeof(buffer[0]));
+
+			// Process the input as needed
+			MessageBoxW(NULL, buffer, L"User Input", MB_OK | MB_ICONINFORMATION);
+
+			// Close the dialog
+			EndDialog(hwndDlg, IDOK);
+		}
+		else if (LOWORD(wParam) == IDCANCEL) {
+			// Cancel button clicked
+			EndDialog(hwndDlg, IDCANCEL);
+		}
+		return TRUE; // Message handled
+	}
+	return FALSE; // Message not handled
+}
+INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+	PreferenceManager preferenceManager;
+
+	switch (message)
+	{
+	case WM_COMMAND:
+	{
+		int wmId = LOWORD(wParam);
+		switch (wmId)
+		{
+		case (IDC_CANCEL):
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		case IDC_APPLY:
+			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
+				preferenceManager.SetPreference("frame", "3000");
+
+			}
+			else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
+				preferenceManager.SetPreference("frame", "60");
+			}
+		}
+	}
+	break;
+	case WM_CLOSE:
+		EndDialog(hDlg, IDCANCEL);
+		return (INT_PTR)TRUE;
+	}
+	return (INT_PTR)FALSE;
+}
