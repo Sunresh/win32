@@ -22,8 +22,7 @@
 #define MAX_LOADSTRING 100
 
 bool stopCamera = true;
-double meancv;
-HWND hCombo, hWndHeight, hwndPP, hFrame;
+HWND  hFrame;
 std::deque<double> brightData;
 Camera cam;
 MyDaq daq;
@@ -34,16 +33,8 @@ WCHAR szTitle[MAX_LOADSTRING], szWindowClass[MAX_LOADSTRING];
 ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-void UpdateHeightText(HWND hWndStatic, double heightValue);
 std::atomic<bool> stopGraphUpdate(true);
 std::atomic<double> pztVolt(0.0);
-
-long dep = 0.0001;
-wchar_t buttonText[256];
-
-
 
 void mess(const wchar_t* text = L"Message") {
 	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
@@ -58,16 +49,14 @@ void UpdateGraph() {
 		pt.completeOfGraph(myUIInstance.GetBDgraphHandle(), brightData,999);
 		pt.completeOfGraph(myUIInstance.GetPZTgraphHandle(), pzt,10);
 		double bright = cam.getBrightness();
-		HWND hWndHeight = GetDlgItem(hFrame, IDC_STATIC_HEIGHT);
-		if (hWndHeight != NULL) {
+		if (myUIInstance.GetHeightTextHandle() != NULL) {
 			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
-			SetWindowTextW(hWndHeight, newText.c_str());
+			SetWindowTextW(myUIInstance.GetHeightTextHandle(), newText.c_str());
 		}
 		double gg = cam.getUpdateofPzt();
-		HWND hwndPP = GetDlgItem(hFrame, IDC_PPZZ);
-		if (hwndPP != NULL) {
+		if (myUIInstance.GetPZTTextHandle() != NULL) {
 			std::wstring newText = L"PZTvolt: " + std::to_wstring(gg);
-			SetWindowTextW(hwndPP, newText.c_str());
+			SetWindowTextW(myUIInstance.GetPZTTextHandle(), newText.c_str());
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
@@ -219,10 +208,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 
 			case ID_CAMERA_OPTION:
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_CAMERA_OPTIONS), hWnd, CameraOptions);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_CAMERA_OPTIONS), hWnd, myUIInstance.CameraOptions);
 				break;
 			case IDM_ABOUT:
-				DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, myUIInstance.About);
 				break;
 			case IDM_EXIT:
                 DestroyWindow(hWnd);
@@ -258,86 +247,3 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	switch (message)
-	{
-	case WM_INITDIALOG:
-		return (INT_PTR)TRUE;
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-		{
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		}
-		break;
-	}
-	return (INT_PTR)FALSE;
-}
-
-void UpdateHeightText(HWND hWndStatic, double heightValue) {
-	wchar_t buffer[50];
-	swprintf_s(buffer, sizeof(buffer) / sizeof(buffer[0]), L"Height: %.2f", heightValue);
-	SetWindowTextW(hWndStatic, buffer);
-	RedrawWindow(hWndStatic, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
-}
-
-INT_PTR CALLBACK CustomDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	switch (uMsg) {
-	case WM_INITDIALOG:
-		return TRUE; // Focus is set to the edit control on dialog initialization
-
-	case WM_COMMAND:
-		if (LOWORD(wParam) == IDOK) {
-			// OK button clicked, retrieve text from the edit control
-			wchar_t buffer[256];
-			GetDlgItemTextW(hwndDlg, IDC_EDIT_INPUT, buffer, sizeof(buffer) / sizeof(buffer[0]));
-
-			// Process the input as needed
-			MessageBoxW(NULL, buffer, L"User Input", MB_OK | MB_ICONINFORMATION);
-
-			// Close the dialog
-			EndDialog(hwndDlg, IDOK);
-		}
-		else if (LOWORD(wParam) == IDCANCEL) {
-			// Cancel button clicked
-			EndDialog(hwndDlg, IDCANCEL);
-		}
-		return TRUE; // Message handled
-	}
-	return FALSE; // Message not handled
-}
-INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	UNREFERENCED_PARAMETER(lParam);
-	PreferenceManager preferenceManager;
-
-	switch (message)
-	{
-	case WM_COMMAND:
-	{
-		int wmId = LOWORD(wParam);
-		switch (wmId)
-		{
-		case (IDC_CANCEL):
-			EndDialog(hDlg, LOWORD(wParam));
-			return (INT_PTR)TRUE;
-		case IDC_APPLY:
-			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
-				preferenceManager.SetPreference("frame", "3000");
-
-			}
-			else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
-				preferenceManager.SetPreference("frame", "60");
-			}
-		}
-	}
-	break;
-	case WM_CLOSE:
-		EndDialog(hDlg, IDCANCEL);
-		return (INT_PTR)TRUE;
-	}
-	return (INT_PTR)FALSE;
-}
