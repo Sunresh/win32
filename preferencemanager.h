@@ -17,6 +17,7 @@ public:
     void SavePreferences();
     std::string GetPreference(const std::string& key, const std::string& defaultValue = "");
     void SetPreference(const std::string& key, const std::string& value);
+    bool schmittTrigger(double inputValue, double upperThreshold, double lowerThreshold, bool output);
 
 private:
     std::string filename;

@@ -59,3 +59,12 @@ DWORD LoadPreferences(const wchar_t* keyName, const wchar_t* valueName, DWORD de
     return value;
 }
 
+bool PreferenceManager::schmittTrigger(double inputValue, double upperThreshold, double lowerThreshold, bool output = false) {
+    if (inputValue >= upperThreshold) {
+        output = true;
+    }
+    else if (inputValue <= lowerThreshold) {
+        output = false;
+    }
+    return output;
+}

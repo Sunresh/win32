@@ -18,6 +18,8 @@
 #include <Windows.h>
 #include "preferencemanager.h"
 #include "MyUi.h"
+#include "ExportCsv.h"
+
 
 #define MAX_LOADSTRING 100
 
@@ -26,6 +28,8 @@ HWND  hFrame;
 std::deque<double> brightData;
 Camera cam;
 MyDaq daq;
+ExportCSV csv;
+ScreenRecord rec;
 MyUI myUIInstance;
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING], szWindowClass[MAX_LOADSTRING];
@@ -40,14 +44,32 @@ void mess(const wchar_t* text = L"Message") {
 	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
 }
 
+void GetFormattedDateTime(char* formattedDateTime, size_t bufferSize) {
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+	_snprintf_s(formattedDateTime, bufferSize, _TRUNCATE, "%02d%02d%02d_%02d%02d%02d",
+		st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+}
 
 void UpdateGraph() {
+	const size_t bufferSize = 14;
+	char formattedDateTime[bufferSize];
+	GetFormattedDateTime(formattedDateTime, bufferSize);
+	const char* fileName = formattedDateTime;
+
 	while (!stopGraphUpdate) {
 		std::deque<double> brightData = cam.GetBrightData();
 		std::deque<double> pzt = cam.GetPZTvolt();
 		PlotGraph pt;
 		pt.completeOfGraph(myUIInstance.GetBDgraphHandle(), brightData,999);
 		pt.completeOfGraph(myUIInstance.GetPZTgraphHandle(), pzt,10);
+		if (cam.getDepositionBool()) {
+			csv.saveCSV(brightData, pzt, fileName);
+		}
+		if (cam.getCaptureScreenBool()) {
+			rec.CaptureAndSaveScreenshot(fileName);
+			cam.setCaptureScreenBool(FALSE);
+		}
 		double bright = cam.getBrightness();
 		if (myUIInstance.GetHeightTextHandle() != NULL) {
 			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
@@ -202,7 +224,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				cam.setDepositionBool(false);
 				ScreenRecord sr;
-				sr.CaptureAndSaveScreenshot(L"C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
+				//sr.CaptureAndSaveScreenshot(L"C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
 				//deep.setIsdeposition(false);
 			}
 			break;

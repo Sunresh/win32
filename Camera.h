@@ -4,6 +4,8 @@
 #include "daq.h"
 #include <Windows.h>
 #include "BrightnessCalculation.h"
+#include "preferencemanager.h"
+
 class Camera {
 public:
 	int id = 0;
@@ -16,6 +18,7 @@ public:
 	bool startDepo = false;
 	MyDaq daq;
 	BrightnessClass my;
+	PreferenceManager pref;
 	Camera() : getId(id) {
 
 	}
@@ -33,6 +36,10 @@ public:
 	const double getBrightness();
 	const double getUpdateofPzt();
 	void DisplayCameraFrame(HWND hWnd, HWND hWn);
+	bool iscapture = FALSE;
+	void Camera::setCaptureScreenBool(bool stop);
+	bool Camera::getCaptureScreenBool();
+
 
 };
 

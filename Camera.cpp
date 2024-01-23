@@ -9,8 +9,14 @@ bool Camera::getstopCamera(){
 void Camera::setDepositionBool(bool stop) {
 	startDepo = stop;
 }
-bool Camera::getDepositionBool(){
+bool Camera::getDepositionBool() {
 	return startDepo;
+}
+void Camera::setCaptureScreenBool(bool stop) {
+	iscapture = stop;
+}
+bool Camera::getCaptureScreenBool() {
+	return iscapture;
 }
 void Camera::start() {
 	OutputDebugStringW(L"\naayyo\n");
@@ -53,7 +59,7 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 	}
 	double newValue = 0;
 	double maxvalue = 3;
-	double steps = 1000;
+	double steps = 100;
 	bool isIncrease = TRUE;
 	const int camwidth = std::round(0.4 * GetSystemMetrics(SM_CXSCREEN));
 	const int rowheight = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN));
@@ -83,13 +89,16 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 
 			setBrightness(tmpcalcFrame);
 			brightData.push_back(getBrightness());
+			bool output = pref.schmittTrigger(getBrightness(),10,0,false);
 			if (getDepositionBool()) {
-				if (newValue < maxvalue && isIncrease) {
+				if (newValue < maxvalue && isIncrease && output) {
 					newValue += (maxvalue / steps);
 				}
 				if (newValue > maxvalue) {
+					setCaptureScreenBool(TRUE);
 					newValue = maxvalue;
 					isIncrease = false;
+					
 				}
 				if (newValue < 0) {
 					newValue = 0;
