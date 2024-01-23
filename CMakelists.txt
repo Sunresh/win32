@@ -13,7 +13,7 @@ add_executable(YourProjectName WIN32
 			"framework.h"
 			"Resource.h" 
 			"targetver.h"  "exportCSV.h" "daq.h" "BrightnessCalculation.h" "preferencemanager.h"
- "preferencemanager.cpp" "BrightnessCalculation.cpp" "Camera.h" "Camera.cpp" "ScreenRecord.h" "PlotGraph.h" "PlotGraph.cpp")
+ "preferencemanager.cpp" "BrightnessCalculation.cpp" "Camera.h" "Camera.cpp" "ScreenRecord.h" "PlotGraph.h" "PlotGraph.cpp" "MyUi.h" "MyUi.cpp")
 
 link_directories("C:/opencv/build/x64/v16/lib")
 
