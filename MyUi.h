@@ -14,6 +14,11 @@ public:
 	HWND GetZoomCamHandle() const;
 	HWND GetBDgraphHandle() const;
 	HWND GetPZTgraphHandle() const;
+	HWND GetHeightTextHandle() const;
+	HWND GetPZTTextHandle() const;
+	static INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK CustomDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+	static INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 };
 
 

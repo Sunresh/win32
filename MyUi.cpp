@@ -55,4 +55,89 @@ HWND MyUI::GetBDgraphHandle() const {
 HWND MyUI::GetPZTgraphHandle() const {
 	return pztGraphframe;
 }
+HWND MyUI::GetHeightTextHandle() const {
+	return hWndHeight;
+}
+
+HWND MyUI::GetPZTTextHandle() const {
+	return hwndPP;
+}
+
+INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+	//PreferenceManager preferenceManager;
+
+	switch (message)
+	{
+	case WM_COMMAND:
+	{
+		int wmId = LOWORD(wParam);
+		switch (wmId)
+		{
+		case (IDC_CANCEL):
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		case IDC_APPLY:
+			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
+				//preferenceManager.SetPreference("frame", "3000");
+
+			}
+			else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
+				//preferenceManager.SetPreference("frame", "60");
+			}
+		}
+	}
+	break;
+	case WM_CLOSE:
+		EndDialog(hDlg, IDCANCEL);
+		return (INT_PTR)TRUE;
+	}
+	return (INT_PTR)FALSE;
+}
+
+INT_PTR CALLBACK MyUI::CustomDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	switch (uMsg) {
+	case WM_INITDIALOG:
+		return TRUE; // Focus is set to the edit control on dialog initialization
+
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK) {
+			// OK button clicked, retrieve text from the edit control
+			wchar_t buffer[256];
+			GetDlgItemTextW(hwndDlg, IDC_EDIT_INPUT, buffer, sizeof(buffer) / sizeof(buffer[0]));
+
+			// Process the input as needed
+			MessageBoxW(NULL, buffer, L"User Input", MB_OK | MB_ICONINFORMATION);
+
+			// Close the dialog
+			EndDialog(hwndDlg, IDOK);
+		}
+		else if (LOWORD(wParam) == IDCANCEL) {
+			// Cancel button clicked
+			EndDialog(hwndDlg, IDCANCEL);
+		}
+		return TRUE; // Message handled
+	}
+	return FALSE; // Message not handled
+}
+
+INT_PTR CALLBACK MyUI::About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return (INT_PTR)TRUE;
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
+}
+
 
