@@ -9,6 +9,33 @@ HWND MyUI::CreateStaticText(const wchar_t* text, int x, int y, int width, int he
 {
 	return CreateWindowW(L"STATIC", text, WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
 }
+
+HWND MyUI::InputSaveButton(const wchar_t* inputText, int x, int y, int w, int h, const wchar_t* buttonText, HWND parent, int inputId, int buttonId, DWORD inputStyle, DWORD buttonStyle)
+{
+	HWND hInput = CreateWindowW(L"EDIT", inputText, WS_VISIBLE | WS_CHILD | inputStyle,x, y, w/2, h, parent, (HMENU)inputId, NULL, NULL);
+	HWND hButton = CreateWindowW(L"BUTTON", buttonText, WS_VISIBLE | WS_CHILD | buttonStyle,x+w/2, y, w/2, h, parent, (HMENU)buttonId, NULL, NULL);
+	return hInput;
+}
+
+std::string MyUI::GetInputText(HWND hInput)
+{
+	// Get the length of the text
+	int textLength = GetWindowTextLengthW(hInput) + 1;
+
+	// Allocate a buffer to hold the text
+	wchar_t* buffer = new wchar_t[textLength];
+
+	// Get the text from the input control
+	GetWindowTextW(hInput, buffer, textLength);
+
+	// Convert to std::wstring
+	std::string result(buffer, buffer + textLength);
+	// Clean up
+	delete[] buffer;
+
+	return result;
+}
+
 HWND MyUI::mainUi(HWND hWnd) {
 	const int buttonWidth = std::round(0.1 * GetSystemMetrics(SM_CXSCREEN));
 	const int camwidth = std::round(0.4 * GetSystemMetrics(SM_CXSCREEN));
@@ -40,6 +67,18 @@ HWND MyUI::mainUi(HWND hWnd) {
 
 	graphframe = CreateButton(L"Graph", buttonWidth, rowheight, 2 * camwidth, 0.25 * GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
 	pztGraphframe = CreateButton(L"Graph", buttonWidth, 0.25 * GetSystemMetrics(SM_CYSCREEN) + rowheight, 2 * camwidth, 0.15 * GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
+
+	// Assume MyUI is an instance of your UI class
+	CreateSlider(buttonWidth+2* camwidth, 1, buttonWidth, 3*buttonHeight, hWnd, IDC_SLIDER, TBS_AUTOTICKS | TBS_ENABLESELRANGE);
+	maya = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 3 * buttonHeight, buttonWidth, buttonHeight, L"Save Uth", hWnd, INPUT_UTH, BTN_UTH, NULL);
+	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 4 * buttonHeight, buttonWidth, buttonHeight, L"Save Lth", hWnd, NULL, NULL, NULL);
+	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 5 * buttonHeight, buttonWidth, buttonHeight, L"Save PZT", hWnd, NULL, NULL, NULL);
+	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 6 * buttonHeight, buttonWidth, buttonHeight, L"Save SH", hWnd, NULL, NULL, NULL);
+	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 7 * buttonHeight, buttonWidth, buttonHeight, L"Save SW", hWnd, NULL, NULL, NULL);
+	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 8 * buttonHeight, buttonWidth, buttonHeight, L"Save SX", hWnd, NULL, NULL, NULL);
+	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 9 * buttonHeight, buttonWidth, buttonHeight, L"Save SY", hWnd, NULL, NULL, NULL);
+	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 10 * buttonHeight, buttonWidth, buttonHeight, L"Save Time", hWnd, NULL, NULL, NULL);
+
 	return hFrame;
 }
 
@@ -61,6 +100,9 @@ HWND MyUI::GetHeightTextHandle() const {
 
 HWND MyUI::GetPZTTextHandle() const {
 	return hwndPP;
+}
+HWND MyUI::GetInputUthTextHandle() const {
+	return maya;
 }
 
 INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -140,4 +182,54 @@ INT_PTR CALLBACK MyUI::About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	return (INT_PTR)FALSE;
 }
 
+HWND MyUI::CreateSlider(int x, int y, int width, int height, HWND parent, int id, DWORD style)
+{
+	InitCommonControls();
 
+	// Create the slider control
+	HWND slider = CreateWindowW(L"msctls_trackbar32", L"", WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
+
+	// Create a static text control for the label
+	CreateWindowW(L"STATIC", L"Slider Value:", WS_VISIBLE | WS_CHILD, x, y+ height, 100, 20, parent, NULL, NULL, NULL);
+
+	// Create a static text control to display the current value
+	HWND valueLabel = CreateWindowW(L"STATIC", L"0", WS_VISIBLE | WS_CHILD, x + width + 10, y, 50, 20, parent, NULL, NULL, NULL);
+
+	// Set the value label as user data of the slider control
+	SetWindowLongPtr(slider, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(valueLabel));
+
+	// Set the initial position for the value label
+	SetWindowTextW(valueLabel, L"0");
+
+	// Set up a notification handler for the slider
+	SendMessage(slider, TBM_SETBUDDY, static_cast<WPARAM>(TRUE), reinterpret_cast<LPARAM>(valueLabel));
+	SendMessage(slider, TBM_SETRANGE, static_cast<WPARAM>(TRUE), MAKELONG(0, 10));  // Set the range from 0 to 10
+	SendMessage(slider, TBM_SETTICFREQ, 1, 0);
+	// Add a message handler for WM_HSCROLL to update the value label
+	SetWindowSubclass(slider, SliderWndProc, 0, 0);
+	return slider;
+}
+
+LRESULT CALLBACK MyUI::SliderWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+
+	if (uMsg == WM_HSCROLL)
+	{
+		HWND valueLabel = reinterpret_cast<HWND>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
+
+		// Get the current position of the slider
+		int currentPosition = SendMessage(hwnd, TBM_GETPOS, 0, 0);
+
+		// Convert the position to a string and update the value label
+		wchar_t valueText[10];
+		swprintf(valueText, L"%d", currentPosition);
+		SetWindowTextW(valueLabel, valueText);
+		OutputDebugStringW(L"\n\nSliderWndProc called\n\n");
+	}
+
+	return DefSubclassProc(hwnd, uMsg, wParam, lParam);
+}
+
+void MyUI::mess(const wchar_t* text) {
+	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
+}

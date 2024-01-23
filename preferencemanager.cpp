@@ -1,6 +1,25 @@
 #include "PreferenceManager.h"
 
 PreferenceManager::PreferenceManager(const std::string& filename) : filename(filename) {
+    PWSTR desktopPath;
+    if (SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &desktopPath) == S_OK) {
+        // Combine the desktop path with the folder name
+        std::wstring folderPath = std::wstring(desktopPath) + L"\\MyNewFolder";
+
+        // Create the folder
+        if (CreateDirectoryW(folderPath.c_str(), NULL) != 0) {
+            std::wcout << L"Folder created successfully: " << folderPath << std::endl;
+        }
+        else {
+            std::cerr << "Failed to create folder. Error code: " << GetLastError() << std::endl;
+        }
+
+        // Free the memory allocated by SHGetKnownFolderPath
+        CoTaskMemFree(desktopPath);
+    }
+    else {
+        std::cerr << "Failed to retrieve desktop folder path." << std::endl;
+    }
     LoadPreferences();
 }
 

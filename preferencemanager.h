@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iostream>  // Include necessary headers
 #include <map>
+#include <iostream>
+#include <Shlobj.h>
 
 class PreferenceManager {
 public:

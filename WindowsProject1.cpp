@@ -40,9 +40,6 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 std::atomic<bool> stopGraphUpdate(true);
 std::atomic<double> pztVolt(0.0);
 
-void mess(const wchar_t* text = L"Message") {
-	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
-}
 
 void GetFormattedDateTime(char* formattedDateTime, size_t bufferSize) {
 	SYSTEMTIME st;
@@ -226,6 +223,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				ScreenRecord sr;
 				//sr.CaptureAndSaveScreenshot(L"C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
 				//deep.setIsdeposition(false);
+			}
+			break;
+			case BTN_UTH:
+			{
+				PreferenceManager pref;
+				std::string ma = myUIInstance.GetInputText(myUIInstance.GetInputUthTextHandle());
+				pref.SetPreference("upperTH",ma);
+				if (HWND pztTextHandle = myUIInstance.GetPZTTextHandle())
+				{
+					std::stringstream newTextStream;
+					newTextStream << "PZTvolt: " << ma;
+					std::string text = newTextStream.str();
+					std::wstring newText(text.begin(), text.end());
+					SetWindowTextW(pztTextHandle, newText.c_str());
+					myUIInstance.mess(newText.c_str());
+				}
 			}
 			break;
 

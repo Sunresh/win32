@@ -12,9 +12,7 @@ class ExportCSV {
 		std::string nameapp;
 	};
 public:
-	ExportCSV() {}
-	void saveCSV(std::deque<double> data, std::deque<double> before, const char* fileName);
+	ExportCSV() {} // Default constructor
+	void ExportCSV::saveCSV(std::deque<double> data, std::deque<double> before, const char* fileName);
 };
-
-
-#endif // !EXPORT_CSV_H
+#endif
