@@ -13,12 +13,8 @@
 
 class PreferenceManager {
 public:
-    PreferenceManager(const std::string& filename = "preferences.json");
-
-    void LoadPreferences();
-    void SavePreferences();
+    PreferenceManager() {};
     std::string getprefString(const std::string& key);
-    double getprefDouble(const std::string& key);
     void SetPreference(const std::string& key, const std::string& value);
     bool schmittTrigger(double inputValue, double upperThreshold, double lowerThreshold, bool output);
 

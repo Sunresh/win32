@@ -8,10 +8,10 @@
 
 class MyUI {
 public:
-	HWND hCombo, hFrame, g_hFrame1, zoomfram, graphframe, pztGraphframe;
+	HWND hCombo, g_hFrame1, zoomfram, graphframe, pztGraphframe;
 	HWND btnUth,btnLth,btnPZT,btnSQH,btnSQW,btnSQX,btnSQY,btnTIME;
 	HWND txtBD, txtEVOLT,txtPZT,txtTIME,txtUTH,txtLTH;
-
+	HWND hFrame;
 	static HWND CreateButton(const wchar_t* text, int x, int y, int buttonWidth, int buttonHeight, HWND parent, int id, DWORD style = BS_PUSHBUTTON);
 	static HWND CreateStaticText(const wchar_t* text, int x, int y, int width, int height, HWND parent, int id, DWORD style = WS_BORDER);
 	static HWND MyUI::CreateSlider(int x, int y, int width, int height, HWND parent, int id, DWORD style);
@@ -40,12 +40,16 @@ public:
 	HWND getInputSQX() const;
 	HWND getInputSQY() const;
 	HWND getInputTIME() const;
+
 	static void MyUI::mess(const wchar_t* text = L"Message");
+	static void MyUI::messi(std::string text = "Message");
+
 	static INT_PTR CALLBACK CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static INT_PTR CALLBACK CustomDialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK SliderWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 	std::string MyUI::GetInputText(HWND hInput);
+	void MyUI::btnh(HWND input, HWND output, std::string key);
 
 };
 

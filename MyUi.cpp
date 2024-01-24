@@ -1,5 +1,6 @@
 #include "MyUi.h"
 
+
 HWND MyUI::CreateButton(const wchar_t* text, int x, int y, int buttonWidth, int buttonHeight, HWND parent, int id, DWORD style)
 {
 	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, buttonWidth, buttonHeight, parent, (HMENU)id, NULL, NULL);
@@ -78,9 +79,9 @@ HWND MyUI::mainUi(HWND hWnd) {
 	// Assume MyUI is an instance of your UI class
 	CreateSlider(buttonWidth+2* camwidth, 1, buttonWidth, 3*buttonHeight, hWnd, IDC_SLIDER, TBS_AUTOTICKS | TBS_ENABLESELRANGE);
 	btnUth = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 3 * buttonHeight, buttonWidth, buttonHeight, L"Save Uth", hWnd, INPUT_UTH, BTN_UTH, NULL);
-	loadPrefv(btnUth, "UpperLH");
+	loadPrefv(btnUth, "UpperTH");
 	btnLth = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 4 * buttonHeight, buttonWidth, buttonHeight, L"Save Lth", hWnd, INPUT_LTH, BTN_LTH, NULL);
-	loadPrefv(btnLth, "LowerLH");
+	loadPrefv(btnLth, "LowerTH");
 	btnPZT = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 5 * buttonHeight, buttonWidth, buttonHeight, L"Save PZT", hWnd, INPUT_PZT, BTN_PZT, NULL);
 	loadPrefv(btnPZT, "PZT");
 	btnSQH = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 6 * buttonHeight, buttonWidth, buttonHeight, L"Save SH", hWnd, INPUT_SQH, BTN_SQH, NULL);
@@ -108,9 +109,8 @@ void MyUI::loadPref(HWND hwnd, std::string key) {
 }
 void MyUI::loadPrefv(HWND hwnd, std::string key) {
 	PreferenceManager pref;
-	double value = pref.getprefDouble(key);
 	std::stringstream newTextStream;
-	newTextStream << value;
+	newTextStream << pref.getprefString(key);
 	std::string text = newTextStream.str();
 	std::wstring newText(text.begin(), text.end());
 	SetWindowTextW(hwnd, newText.c_str());
@@ -134,7 +134,7 @@ HWND MyUI::getTxtBD() const {
 	return txtBD;
 }
 HWND MyUI::getTxtUth() const {
-	return btnUth;
+	return txtUTH;
 }
 HWND MyUI::getTxtLth() const {
 	return txtLTH;
@@ -175,11 +175,11 @@ HWND MyUI::getInputTIME() const {
 	return btnTIME;
 }
 
+
 INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
 	//PreferenceManager preferenceManager;
-
 	switch (message)
 	{
 	case WM_COMMAND:
@@ -192,12 +192,19 @@ INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPA
 			return (INT_PTR)TRUE;
 		case IDC_APPLY:
 			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
+				HWND hMainWnd = ::FindWindowW(L"MainWndClass", nullptr);
+				PostMessage(hMainWnd, WM_FRAMERATE_UPDATED, 0, 0);
+				PostMessage(hDlg, WM_FRAMERATE_UPDATED, 0, 0);
+			}
+			break;
+		//case IDC_APPLY:
+			//if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
 				//preferenceManager.SetPreference("frame", "3000");
 
-			}
-			else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
+			//}
+			//else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
 				//preferenceManager.SetPreference("frame", "60");
-			}
+			//}
 		}
 	}
 	break;
@@ -302,4 +309,27 @@ LRESULT CALLBACK MyUI::SliderWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM
 
 void MyUI::mess(const wchar_t* text) {
 	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
+}
+void MyUI::messi(std::string text) {
+	std::stringstream newTextStream;
+	newTextStream << text;
+	std::string texty = newTextStream.str();
+	std::wstring newText(texty.begin(), texty.end());
+	MessageBoxW(NULL, newText.c_str(), L"Message", MB_OK | MB_ICONINFORMATION);
+}
+
+void MyUI::btnh(HWND input, HWND output, std::string key) {
+	PreferenceManager pref;
+	std::string ma = GetInputText(input);
+	pref.SetPreference(key, ma);
+	if (HWND pztTextHandle = output)
+	{
+		std::stringstream newTextStream;
+		newTextStream << key << ":" << ma;
+		std::string text = newTextStream.str();
+		std::wstring newText(text.begin(), text.end());
+		SetWindowTextW(pztTextHandle, newText.c_str());
+		//myUIInstance.mess(newText.c_str());
+	}
+
 }

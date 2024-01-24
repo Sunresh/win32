@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include "BrightnessCalculation.h"
 #include "preferencemanager.h"
+#include "MyUi.h"
 
 class Camera {
 public:
@@ -15,22 +16,30 @@ public:
 	std::deque<double> brightData, pztVolt;
 	double brightness = 0;
 	double pzt_vol = 0;
+	double sqw = 15;
+	double epv = 0.0;
 	bool startDepo = false;
 	MyDaq daq;
 	BrightnessClass my;
+	MyUI myUIInstance;
 	PreferenceManager pref;
-	Camera() : getId(id) {
-
-	}
+	void setEV(double ephv = 2.0);
+	double getEV();
 	void setStopCamera(bool stop);
 	bool getstopCamera();
+	void setSQW(double stop);
+
+	double getTIME();
+
 	void setDepositionBool(bool stop);
 	bool getDepositionBool();
 	void start();
 	void drawRectangle(cv::Mat& frame, int x1, int y1, int x2, int y2, const cv::Scalar& color, int thickness);
 	double meanofBri(cv::Mat& iframe);
+
 	std::deque<double>& GetPZTvolt();
 	std::deque<double>& GetBrightData();
+
 	void setBrightness(cv::Mat& tmpcalcFrame);
 	void setPztVolt(double dddd);
 	const double getBrightness();

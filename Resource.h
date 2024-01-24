@@ -1,6 +1,7 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by WindowsProject1.rc
+#define WM_FRAMERATE_UPDATED (WM_APP + 1)
 
 #define IDS_APP_TITLE			103
 

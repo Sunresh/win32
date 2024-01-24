@@ -40,6 +40,7 @@ LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 std::atomic<bool> stopGraphUpdate(true);
 std::atomic<double> pztVolt(0.0);
 
+HWND g_hMainWindow = nullptr;
 
 void GetFormattedDateTime(char* formattedDateTime, size_t bufferSize) {
 	SYSTEMTIME st;
@@ -98,14 +99,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINDOWSPROJECT1));
     MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+	while (GetMessage(&msg, nullptr, 0, 0)) {
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
     return (int) msg.wParam;
 }
 
@@ -160,8 +157,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
+	case WM_FRAMERATE_UPDATED:
+	{
+		myUIInstance.messi("rrrr");
+	}
+		// Update frame rate
+	break;
+
 	case WM_CREATE:
 	{
+		g_hMainWindow = hWnd;
 		hFrame = myUIInstance.mainUi(hWnd);
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
@@ -244,7 +249,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case BTN_UTH:
 			{
-				btnhandle(myUIInstance.getInputUth(), myUIInstance.getTxtUth(), "UpperLH");
+				btnhandle(myUIInstance.getInputUth(), myUIInstance.getTxtUth(), "UpperTH");
 			}
 			break;
 			case BTN_LTH:
