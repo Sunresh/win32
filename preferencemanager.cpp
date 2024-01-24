@@ -39,16 +39,58 @@ void PreferenceManager::SavePreferences() {
     }
 }
 
-std::string PreferenceManager::GetPreference(const std::string& key, const std::string& defaultValue) {
+#include <stdexcept>
+
+std::string PreferenceManager::getprefString(const std::string& key) {
     // Check if the preferences object has the specified key
     if (preferences.is_object() && preferences.find(key) != preferences.end()) {
-        // If the key is found, return its value
-        return preferences[key].get<std::string>();
+        // If the key is found, check if the value is of type string
+        if (preferences[key].is_string()) {
+            // If it's a string, return its value
+            return preferences[key].get<std::string>();
+        }
+        else {
+            // If the value is not a string, you may want to handle this case appropriately.
+            // For now, let's return an empty string as a default value.
+            return "";
+        }
     }
     else {
         // If the key is not found or the preferences object is not an object,
-        // return the default value
-        return defaultValue;
+        // return some default string value. For now, let's return an empty string.
+        return "";
+    }
+}
+
+double PreferenceManager::getprefDouble(const std::string& key) {
+    // Check if the preferences object has the specified key
+    if (preferences.is_object() && preferences.find(key) != preferences.end()) {
+        // If the key is found, check if the value is of type double
+        if (preferences[key].is_number()) {
+            // If it's a number (double), return its value as double
+            return preferences[key].get<double>();
+        }
+        else if (preferences[key].is_string()) {
+            // If it's a string, try to convert it to double
+            try {
+                return std::stod(preferences[key].get<std::string>());
+            }
+            catch (const std::invalid_argument& e) {
+                // Handle the case where the conversion fails
+                // For now, let's return 0.0 as a default value in case of conversion failure
+                return 0.0;
+            }
+        }
+        else {
+            // If the value is neither a number nor a string, you may want to handle this case appropriately.
+            // For now, let's return 0.0 as a default value.
+            return 0.0;
+        }
+    }
+    else {
+        // If the key is not found or the preferences object is not an object,
+        // return some default double value. For now, let's return 0.0.
+        return 0.0;
     }
 }
 

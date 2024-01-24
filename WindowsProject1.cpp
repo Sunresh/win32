@@ -302,7 +302,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
 		PreferenceManager pr;
-		std::string loadedValue = pr.GetPreference("frame");
+		std::string loadedValue = pr.getprefString("frame");
 		HWND hwndPP = GetDlgItem(hWnd, ID_CAMERA_OPTION);
 		if (hwndPP != NULL) {
 			std::wstring wideLoadedValue(loadedValue.begin(), loadedValue.end());

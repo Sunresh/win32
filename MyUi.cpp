@@ -99,7 +99,7 @@ HWND MyUI::mainUi(HWND hWnd) {
 
 void MyUI::loadPref(HWND hwnd, std::string key) {
 	PreferenceManager pref;
-	std::string value = pref.GetPreference(key);
+	std::string value = pref.getprefString(key);
 	std::stringstream newTextStream;
 	newTextStream << key << ":" << value;
 	std::string text = newTextStream.str();
@@ -108,7 +108,7 @@ void MyUI::loadPref(HWND hwnd, std::string key) {
 }
 void MyUI::loadPrefv(HWND hwnd, std::string key) {
 	PreferenceManager pref;
-	std::string value = pref.GetPreference(key);
+	double value = pref.getprefDouble(key);
 	std::stringstream newTextStream;
 	newTextStream << value;
 	std::string text = newTextStream.str();

@@ -31,6 +31,20 @@
 #define IDC_SLIDER_VALUE 1015
 #define INPUT_UTH		1016
 #define BTN_UTH			1017
+#define INPUT_LTH		1018
+#define BTN_LTH			1019
+#define INPUT_PZT		1020
+#define BTN_PZT			1021
+#define INPUT_SQH		1022
+#define BTN_SQH			1023
+#define INPUT_SQW		1024
+#define BTN_SQW			1025
+#define INPUT_SQX		1026
+#define BTN_SQX			1027
+#define INPUT_SQY		1028
+#define BTN_SQY			1029
+#define INPUT_TIME		1030
+#define BTN_TIME		1031
 
 
 #define ID_BTN_CAMERA_ON 130
