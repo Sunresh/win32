@@ -50,7 +50,7 @@ public:
 	static LRESULT CALLBACK SliderWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData);
 	std::string MyUI::GetInputText(HWND hInput);
 	void MyUI::btnh(HWND input, HWND output, std::string key);
-
+	static std::string MyUI::getTextInput(HWND hInput);
 };
 
 

@@ -3,7 +3,6 @@
 
 #include <windows.h>
 #include <string>
-#include "json.hpp"  // Include json.hpp where the json type is used
 #include <sstream>
 #include <fstream>
 #include <iostream>  // Include necessary headers
@@ -16,11 +15,13 @@ public:
     PreferenceManager() {};
     std::string getprefString(const std::string& key);
     void SetPreference(const std::string& key, const std::string& value);
+    void SetPreferenceW(const std::string& key, const wchar_t* text);
     bool schmittTrigger(double inputValue, double upperThreshold, double lowerThreshold, bool output);
 
 private:
     std::string filename;
-    nlohmann::json preferences;  // Use nlohmann::json as a member variable
+ 
+
 };
 
 #endif // PREFERENCE_MANAGER_H

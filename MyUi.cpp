@@ -37,6 +37,25 @@ std::string MyUI::GetInputText(HWND hInput)
 	return result;
 }
 
+std::string MyUI::getTextInput(HWND hInput)
+{
+	// Get the length of the text
+	int textLength = GetWindowTextLengthW(hInput) + 1;
+
+	// Allocate a buffer to hold the text
+	wchar_t* buffer = new wchar_t[textLength];
+
+	// Get the text from the input control
+	GetWindowTextW(hInput, buffer, textLength);
+
+	// Convert to std::wstring
+	std::string result(buffer, buffer + textLength);
+	// Clean up
+	delete[] buffer;
+
+	return result;
+}
+
 HWND MyUI::mainUi(HWND hWnd) {
 	const int buttonWidth = std::round(0.1 * GetSystemMetrics(SM_CXSCREEN));
 	const int camwidth = std::round(0.4 * GetSystemMetrics(SM_CXSCREEN));
@@ -179,32 +198,51 @@ HWND MyUI::getInputTIME() const {
 INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
-	//PreferenceManager preferenceManager;
+	PreferenceManager pref;
 	switch (message)
 	{
 	case WM_COMMAND:
 	{
 		int wmId = LOWORD(wParam);
+		UINT textLength;
 		switch (wmId)
 		{
 		case (IDC_CANCEL):
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
 		case IDC_APPLY:
-			if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
-				HWND hMainWnd = ::FindWindowW(L"MainWndClass", nullptr);
-				PostMessage(hMainWnd, WM_FRAMERATE_UPDATED, 0, 0);
-				PostMessage(hDlg, WM_FRAMERATE_UPDATED, 0, 0);
-			}
-			break;
-		//case IDC_APPLY:
-			//if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_30) == BST_CHECKED) {
-				//preferenceManager.SetPreference("frame", "3000");
 
-			//}
-			//else if (IsDlgButtonChecked(hDlg, IDC_FRAME_RATE_60) == BST_CHECKED) {
-				//preferenceManager.SetPreference("frame", "60");
-			//}
+			break;
+
+		case ST_BTN_UTH:
+			wchar_t buffer[256];
+			textLength = GetDlgItemTextW(hDlg, ST_INP_UTH, buffer, sizeof(buffer) / sizeof(buffer[0]));
+			if (textLength > 0) {
+				wchar_t* text = buffer;
+				pref.SetPreferenceW("UpperTH", text);
+			}
+			else {}
+			break;
+
+		case ST_BTN_LTH:
+
+			break;
+
+		case ST_BTN_PZT:
+
+			break;
+
+		case ST_BTN_EPV:
+
+			break;
+
+		case ST_BTN_TIME:
+
+			break;
+
+		default:
+			break;
+
 		}
 	}
 	break;

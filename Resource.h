@@ -47,6 +47,20 @@
 #define INPUT_TIME		1030
 #define BTN_TIME		1031
 
+//setting ids
+
+#define ST_BTN_UTH		1032
+#define ST_INP_UTH		1033
+#define ST_BTN_LTH		1034
+#define ST_INP_LTH		1035
+#define ST_BTN_PZT		1036
+#define ST_INP_PZT		1037
+#define ST_BTN_EPV		1038
+#define ST_INP_EPV		1039
+#define ST_BTN_TIME		1040
+#define ST_INP_TIME		1041
+
+
 
 #define ID_BTN_CAMERA_ON 130
 #define ID_BTN_CAMERA_OFF 131
