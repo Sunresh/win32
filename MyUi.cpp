@@ -54,13 +54,20 @@ HWND MyUI::mainUi(HWND hWnd) {
 	hCombo = CreateButton(L"30", 2, 7 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_CAMERA_OPTION);
 	CreateButton(L"EPV0", 2, 8 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_EPDV0);
 	CreateButton(L"PZTV0", 2, 9 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_PZTV0);
-	hWndHeight = CreateStaticText(L"Brightness: ", 2, 10 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_STATIC_HEIGHT);
-	CreateStaticText(L"E.Volt: 5V", 2, 11 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
-	CreateStaticText(L"PZT volt: 10V", 2, 12 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
-	CreateStaticText(L"Dep. Time: 60s", 2, 13 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
-	CreateStaticText(L"Upper Th.: 75", 2, 14 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
-	CreateStaticText(L"Lower Th.: 25", 2, 15 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_YOUR_LOWER_TH_STATIC_ID);
-	hwndPP = CreateStaticText(L"Lower Th.: 25", 2, 16 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_PPZZ);
+
+	txtBD = CreateStaticText(L"Brightness: ", 2, 10 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_STATIC_HEIGHT);
+	loadPref(txtBD,"txtBD");
+	txtEVOLT = CreateStaticText(L"E.Volt:", 2, 11 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	loadPref(txtEVOLT, "txtBD");
+	txtPZT = CreateStaticText(L"PZT volt:", 2, 12 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	loadPref(txtPZT, "PZT");
+	txtTIME = CreateStaticText(L"Dep. Time(s)", 2, 13 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	loadPref(txtTIME, "TIME");
+	txtUTH = CreateStaticText(L"Upper Th.:", 2, 14 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	loadPref(txtUTH, "LowerLH");
+	txtLTH = CreateStaticText(L"Lower Th.:", 2, 15 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_YOUR_LOWER_TH_STATIC_ID);
+	loadPref(txtLTH, "LowerLH");
+	//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_PPZZ);
 
 	g_hFrame1 = CreateButton(L"Camera", buttonWidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
 	zoomfram = CreateButton(L"ZOOM", buttonWidth + camwidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
@@ -70,17 +77,45 @@ HWND MyUI::mainUi(HWND hWnd) {
 
 	// Assume MyUI is an instance of your UI class
 	CreateSlider(buttonWidth+2* camwidth, 1, buttonWidth, 3*buttonHeight, hWnd, IDC_SLIDER, TBS_AUTOTICKS | TBS_ENABLESELRANGE);
-	maya = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 3 * buttonHeight, buttonWidth, buttonHeight, L"Save Uth", hWnd, INPUT_UTH, BTN_UTH, NULL);
-	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 4 * buttonHeight, buttonWidth, buttonHeight, L"Save Lth", hWnd, NULL, NULL, NULL);
-	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 5 * buttonHeight, buttonWidth, buttonHeight, L"Save PZT", hWnd, NULL, NULL, NULL);
-	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 6 * buttonHeight, buttonWidth, buttonHeight, L"Save SH", hWnd, NULL, NULL, NULL);
-	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 7 * buttonHeight, buttonWidth, buttonHeight, L"Save SW", hWnd, NULL, NULL, NULL);
-	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 8 * buttonHeight, buttonWidth, buttonHeight, L"Save SX", hWnd, NULL, NULL, NULL);
-	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 9 * buttonHeight, buttonWidth, buttonHeight, L"Save SY", hWnd, NULL, NULL, NULL);
-	InputSaveButton(L"0", buttonWidth + 2 * camwidth, 10 * buttonHeight, buttonWidth, buttonHeight, L"Save Time", hWnd, NULL, NULL, NULL);
+	btnUth = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 3 * buttonHeight, buttonWidth, buttonHeight, L"Save Uth", hWnd, INPUT_UTH, BTN_UTH, NULL);
+	loadPrefv(btnUth, "UpperLH");
+	btnLth = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 4 * buttonHeight, buttonWidth, buttonHeight, L"Save Lth", hWnd, INPUT_LTH, BTN_LTH, NULL);
+	loadPrefv(btnLth, "LowerLH");
+	btnPZT = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 5 * buttonHeight, buttonWidth, buttonHeight, L"Save PZT", hWnd, INPUT_PZT, BTN_PZT, NULL);
+	loadPrefv(btnPZT, "PZT");
+	btnSQH = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 6 * buttonHeight, buttonWidth, buttonHeight, L"Save SH", hWnd, INPUT_SQH, BTN_SQH, NULL);
+	loadPrefv(btnSQH, "SQH");
+	btnSQW = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 7 * buttonHeight, buttonWidth, buttonHeight, L"Save SW", hWnd, INPUT_SQW, BTN_SQW, NULL);
+	loadPrefv(btnSQW, "SQW");
+	btnSQX = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 8 * buttonHeight, buttonWidth, buttonHeight, L"Save SX", hWnd, INPUT_SQX, BTN_SQX, NULL);
+	loadPrefv(btnSQX, "SQX");
+	btnSQY = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 9 * buttonHeight, buttonWidth, buttonHeight, L"Save SY", hWnd, INPUT_SQY, BTN_SQY, NULL);
+	loadPrefv(btnSQY, "SQY");
+	btnTIME = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 10 * buttonHeight, buttonWidth, buttonHeight, L"Save Time", hWnd, INPUT_TIME, BTN_TIME, NULL);
+	loadPrefv(btnTIME, "TIME");
 
 	return hFrame;
 }
+
+void MyUI::loadPref(HWND hwnd, std::string key) {
+	PreferenceManager pref;
+	std::string value = pref.GetPreference(key);
+	std::stringstream newTextStream;
+	newTextStream << key << ":" << value;
+	std::string text = newTextStream.str();
+	std::wstring newText(text.begin(), text.end());
+	SetWindowTextW(hwnd, newText.c_str());
+}
+void MyUI::loadPrefv(HWND hwnd, std::string key) {
+	PreferenceManager pref;
+	std::string value = pref.GetPreference(key);
+	std::stringstream newTextStream;
+	newTextStream << value;
+	std::string text = newTextStream.str();
+	std::wstring newText(text.begin(), text.end());
+	SetWindowTextW(hwnd, newText.c_str());
+}
+
 
 HWND MyUI::GetCamHandle() const {
 	return g_hFrame1;
@@ -94,15 +129,50 @@ HWND MyUI::GetBDgraphHandle() const {
 HWND MyUI::GetPZTgraphHandle() const {
 	return pztGraphframe;
 }
-HWND MyUI::GetHeightTextHandle() const {
-	return hWndHeight;
+
+HWND MyUI::getTxtBD() const {
+	return txtBD;
+}
+HWND MyUI::getTxtUth() const {
+	return btnUth;
+}
+HWND MyUI::getTxtLth() const {
+	return txtLTH;
+}
+HWND MyUI::getTxtEVOLT() const {
+	return txtEVOLT;
+}
+HWND MyUI::getTxtPZT() const {
+	return txtPZT;
+}
+HWND MyUI::getTxtTIME() const {
+	return txtTIME;
 }
 
-HWND MyUI::GetPZTTextHandle() const {
-	return hwndPP;
+
+HWND MyUI::getInputUth() const {
+	return btnUth;
 }
-HWND MyUI::GetInputUthTextHandle() const {
-	return maya;
+HWND MyUI::getInputlth() const {
+	return btnLth;
+}
+HWND MyUI::getInputPZT() const {
+	return btnPZT;
+}
+HWND MyUI::getInputSQH() const {
+	return btnSQH;
+}
+HWND MyUI::getInputSQW() const {
+	return btnSQW;
+}
+HWND MyUI::getInputSQX() const {
+	return btnSQX;
+}
+HWND MyUI::getInputSQY() const {
+	return btnSQY;
+}
+HWND MyUI::getInputTIME() const {
+	return btnTIME;
 }
 
 INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)

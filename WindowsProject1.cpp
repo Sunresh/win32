@@ -68,14 +68,14 @@ void UpdateGraph() {
 			cam.setCaptureScreenBool(FALSE);
 		}
 		double bright = cam.getBrightness();
-		if (myUIInstance.GetHeightTextHandle() != NULL) {
+		if (myUIInstance.getTxtBD() != NULL) {
 			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
-			SetWindowTextW(myUIInstance.GetHeightTextHandle(), newText.c_str());
+			SetWindowTextW(myUIInstance.getTxtBD(), newText.c_str());
 		}
 		double gg = cam.getUpdateofPzt();
-		if (myUIInstance.GetPZTTextHandle() != NULL) {
+		if (myUIInstance.getTxtPZT() != NULL) {
 			std::wstring newText = L"PZTvolt: " + std::to_wstring(gg);
-			SetWindowTextW(myUIInstance.GetPZTTextHandle(), newText.c_str());
+			SetWindowTextW(myUIInstance.getTxtPZT(), newText.c_str());
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
@@ -138,9 +138,26 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    UpdateWindow(hWnd);
    return TRUE;
 }
+void btnhandle(HWND input,HWND output,std::string key) {
+	PreferenceManager pref;
+	std::string ma = myUIInstance.GetInputText(input);
+	pref.SetPreference(key, ma);
+	if (HWND pztTextHandle = output)
+	{
+		std::stringstream newTextStream;
+		newTextStream << key << ":" << ma;
+		std::string text = newTextStream.str();
+		std::wstring newText(text.begin(), text.end());
+		SetWindowTextW(pztTextHandle, newText.c_str());
+		//myUIInstance.mess(newText.c_str());
+	}
+
+}
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	PreferenceManager pref;
+
     switch (message)
     {
 	case WM_CREATE:
@@ -227,18 +244,42 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case BTN_UTH:
 			{
-				PreferenceManager pref;
-				std::string ma = myUIInstance.GetInputText(myUIInstance.GetInputUthTextHandle());
-				pref.SetPreference("upperTH",ma);
-				if (HWND pztTextHandle = myUIInstance.GetPZTTextHandle())
-				{
-					std::stringstream newTextStream;
-					newTextStream << "PZTvolt: " << ma;
-					std::string text = newTextStream.str();
-					std::wstring newText(text.begin(), text.end());
-					SetWindowTextW(pztTextHandle, newText.c_str());
-					myUIInstance.mess(newText.c_str());
-				}
+				btnhandle(myUIInstance.getInputUth(), myUIInstance.getTxtUth(), "UpperLH");
+			}
+			break;
+			case BTN_LTH:
+			{
+				btnhandle(myUIInstance.getInputlth(), myUIInstance.getTxtLth(), "LowerLH");
+			}
+			break;
+			case BTN_PZT:
+			{
+				btnhandle(myUIInstance.getInputPZT(), myUIInstance.getTxtPZT(), "PZT");
+			}
+			break;
+			case BTN_SQH:
+			{
+				btnhandle(myUIInstance.getInputSQH(), myUIInstance.getTxtPZT(), "SQH");
+			}
+			break;
+			case BTN_SQW:
+			{
+				btnhandle(myUIInstance.getInputSQW(), myUIInstance.getTxtPZT(), "SQW");
+			}
+			break;
+			case BTN_SQX:
+			{
+				btnhandle(myUIInstance.getInputSQX(), myUIInstance.getTxtPZT(), "SQX");
+			}
+			break;
+			case BTN_SQY:
+			{
+				btnhandle(myUIInstance.getInputSQY(), myUIInstance.getTxtPZT(), "SQY");
+			}
+			break;
+			case BTN_TIME:
+			{
+				btnhandle(myUIInstance.getInputTIME(), myUIInstance.getTxtTIME(), "TIME");
 			}
 			break;
 
