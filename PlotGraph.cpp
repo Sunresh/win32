@@ -1,6 +1,6 @@
 #include "PlotGraph.h"
 
-void PlotGraph::completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, double maxVertical = 999.0) {
+void PlotGraph::completeOfGraph(HWND pztGraphframe, std::deque<double> lineData,  HWND bdtext, double maxVertical) {
 	HDC graphf = GetDC(pztGraphframe);
 	RECT rect;
 	GetClientRect(pztGraphframe, &rect);
@@ -20,6 +20,10 @@ void PlotGraph::completeOfGraph(HWND pztGraphframe, std::deque<double> lineData,
 		lineData.erase(lineData.begin(), lineData.begin() + (lineData.size() - (visibleDataPoints - startIndex)));
 	}
 	for (int i = startIndex; i < endIndex - 1; ++i) {
+		if (bdtext != NULL) {
+			std::wstring newText = L" : " + std::to_wstring(lineData[i]);
+			SetWindowTextW(bdtext, newText.c_str());
+		}
 		double y1 = lineData[i];
 		double y2 = lineData[i + 1];
 		double normalizedX1 = static_cast<double>(i - startIndex) / (visibleDataPoints - 1);

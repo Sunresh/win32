@@ -15,11 +15,19 @@ public:
 	bool stopCamera = true;
 	std::deque<double> brightData, pztVolt;
 	double brightness = 0;
-	double pzt_vol = 0;
-	double sqw = 15;
-	double epv = 0.0;
 	bool startDepo = false;
 	MyDaq daq;
+	double sqw = 15;
+	double sqh = 15;
+	double sqx1 = 15;
+	double sqy1 = 15;
+	double time = 15;
+	double uth = 15;
+	double lth = 15;
+	double pztmax = 15;
+	double epv = 2;
+	double kk = 15;
+
 	BrightnessClass my;
 	MyUI myUIInstance;
 	PreferenceManager pref;
@@ -28,8 +36,7 @@ public:
 	void setStopCamera(bool stop);
 	bool getstopCamera();
 	void setSQW(double stop);
-
-	double getTIME();
+	void Camera::pauseCamera();
 
 	void setDepositionBool(bool stop);
 	bool getDepositionBool();
@@ -41,9 +48,7 @@ public:
 	std::deque<double>& GetBrightData();
 
 	void setBrightness(cv::Mat& tmpcalcFrame);
-	void setPztVolt(double dddd);
 	const double getBrightness();
-	const double getUpdateofPzt();
 	void DisplayCameraFrame(HWND hWnd, HWND hWn);
 	bool iscapture = FALSE;
 	void Camera::setCaptureScreenBool(bool stop);

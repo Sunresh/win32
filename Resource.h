@@ -63,6 +63,12 @@
 #define ST_INP_SQW		1043
 #define ST_BTN_SQH		1044
 #define ST_INP_SQH		1045
+#define ST_BTN_SQX1		1046
+#define ST_INP_SQX1		1047
+#define ST_BTN_SQY1		1048
+#define ST_INP_SQY1		1049
+#define IDC_SAVEALL		1050
+
 
 #define UTH_KEY "UpperTHvalue"
 #define LTH_KEY "LowerTHvalue"
@@ -71,6 +77,8 @@
 #define TIME_KEY "TimeOfDeposition"
 #define SQW_KEY "SquareWidth"
 #define SQH_KEY "SquareHeight"
+#define SQX1_KEY "Squareoriginx1"
+#define SQY1_KEY "Squareoriginy1"
 #define WM_USER_UPDATE (WM_USER + 1)
 
 

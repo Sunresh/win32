@@ -209,25 +209,22 @@ INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPA
 {
 	UNREFERENCED_PARAMETER(lParam);
 	PreferenceManager pref;
-	HWND hubtn = GetDlgItem(hDlg, ST_INP_UTH);
-	HWND hlbtn = GetDlgItem(hDlg, ST_INP_LTH);
-	HWND hpbtn = GetDlgItem(hDlg, ST_INP_PZT);
-	HWND hebtn = GetDlgItem(hDlg, ST_INP_EPV);
-	HWND htbtn = GetDlgItem(hDlg, ST_INP_TIME);
-	HWND sqwval = GetDlgItem(hDlg, ST_INP_SQW);
-	HWND sqhval = GetDlgItem(hDlg, ST_INP_SQH);
+		HWND hubtn = GetDlgItem(hDlg, ST_INP_UTH);
+		HWND hlbtn = GetDlgItem(hDlg, ST_INP_LTH);
+		HWND hpbtn = GetDlgItem(hDlg, ST_INP_PZT);
+		HWND hebtn = GetDlgItem(hDlg, ST_INP_EPV);
+		HWND htbtn = GetDlgItem(hDlg, ST_INP_TIME);
+		HWND sqwval = GetDlgItem(hDlg, ST_INP_SQW);
+		HWND sqhval = GetDlgItem(hDlg, ST_INP_SQH);
+		HWND sqx1p = GetDlgItem(hDlg, ST_INP_SQX1);
+		HWND sqy1p = GetDlgItem(hDlg, ST_INP_SQY1);
 
 	switch (message)
 	{
-	case WM_CREATE:
-	{
-		SetWindowTextW(hubtn, L"oi");
-	}
-	break;
 	case WM_COMMAND:
 	{
-
 		int wmId = LOWORD(wParam);
+
 		switch (wmId)
 		{
 		case (IDC_CANCEL):
@@ -241,8 +238,30 @@ INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPA
 			loadPrefv(htbtn, TIME_KEY);
 			loadPrefv(sqwval, SQW_KEY);
 			loadPrefv(sqhval, SQH_KEY);
+			loadPrefv(sqx1p, SQX1_KEY);
+			loadPrefv(sqy1p, SQY1_KEY);
 			break;
 
+		case IDC_SAVEALL:
+			if (MessageBoxW(NULL, L"Are you sure?", L"Confirm", MB_OKCANCEL | MB_ICONINFORMATION) == IDOK) {
+				pushh(hDlg, ST_INP_UTH, UTH_KEY);
+				pushh(hDlg, ST_INP_LTH, LTH_KEY);
+				pushh(hDlg, ST_INP_PZT, PZT_KEY);
+				pushh(hDlg, ST_INP_EPV, EPV_KEY);
+				pushh(hDlg, ST_INP_TIME, TIME_KEY);
+				pushh(hDlg, ST_INP_SQW, SQW_KEY);
+				pushh(hDlg, ST_INP_SQH, SQH_KEY);
+				pushh(hDlg, ST_INP_SQX1, SQX1_KEY);
+				pushh(hDlg, ST_INP_SQY1, SQY1_KEY);
+				EndDialog(hDlg, LOWORD(wParam));
+				return (INT_PTR)TRUE;
+			}
+			else {
+				EndDialog(hDlg, LOWORD(wParam));
+				return (INT_PTR)TRUE;
+			}
+			
+			break;
 		case ST_BTN_UTH:
 			pushh(hDlg, ST_INP_UTH, UTH_KEY);
 			break;
@@ -268,6 +287,13 @@ INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPA
 
 		case ST_BTN_SQH:
 			pushh(hDlg, ST_INP_SQH, SQH_KEY);
+			break;
+		case ST_BTN_SQX1:
+			pushh(hDlg, ST_INP_SQX1, SQX1_KEY);
+			break;
+
+		case ST_BTN_SQY1:
+			pushh(hDlg, ST_INP_SQY1, SQY1_KEY);
 			break;
 
 		default:

@@ -10,7 +10,7 @@
 class PlotGraph {
 public:
 
-	void completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, double maxVertical);
+	void completeOfGraph(HWND pztGraphframe, std::deque<double> lineData, HWND bdtext, double maxVertical=999);
 
 };
 

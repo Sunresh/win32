@@ -49,36 +49,37 @@ std::deque<double>& Camera::GetBrightData() {
 void Camera::setBrightness(cv::Mat& tmpcalcFrame) {
 	brightness = my.differencesOf(tmpcalcFrame);
 }
-void Camera::setPztVolt(double dddd) {
-	pzt_vol = dddd;
-}
 const double Camera::getBrightness(){
 	return brightness;
-}
-const double Camera::getUpdateofPzt(){
-	return pzt_vol;
 }
 void Camera::setSQW(double ss) {
 	sqw = ss;
 }
-double Camera::getTIME() {
-	double ee = std::stod(pref.getprefString("TIME"));
-	if (ee != 0.0) {
-		return ee;
-	}
-	else {
-		return 100;
-	}
+void Camera::pauseCamera() {
+	setStopCamera(TRUE);
+	cap.release();
+	sqw = std::stod(pref.getprefString(SQW_KEY));
+	sqw = std::stod(pref.getprefString(SQH_KEY));
 }
 void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 {
+	OutputDebugStringW(L"\n\n\n\naayyo\n\n\n\n\n");
+	sqw = std::stod(pref.getprefString(SQW_KEY));
+	sqh = std::stod(pref.getprefString(SQH_KEY));
+	sqx1 = std::stod(pref.getprefString(SQX1_KEY));
+	sqy1 = std::stod(pref.getprefString(SQY1_KEY));
+	time = std::stod(pref.getprefString(TIME_KEY));
+	uth = std::stod(pref.getprefString(UTH_KEY));
+	lth = std::stod(pref.getprefString(LTH_KEY));
+	epv = std::stod(pref.getprefString(EPV_KEY));
+	pztmax = std::stod(pref.getprefString(PZT_KEY));
+
 	try {
 		cap.open(0);
 		if (!cap.isOpened()) {
 			return;
 		}
 		double stage = 0;
-		double maxvalue = 3;
 		
 		const int camwidth = std::round(0.4 * GetSystemMetrics(SM_CXSCREEN));
 		const int rowheight = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN));
@@ -104,14 +105,15 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
 				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(camwidth - 10, rowheight - 10));
 				// Show calfram portion in zoomfram
-				drawRectangle(tmpFrameCropped, (camwidth - 10) * 0.45, (rowheight - 10) * 0.45, (camwidth - 10) * 0.55, (rowheight - 10) * 0.55, cv::Scalar(0, 0, 255), 1);
-				cv::Mat calcFrame = tmpFrameCropped(cv::Rect((camwidth - 10) * 0.45, (rowheight - 10) * 0.45, (camwidth - 10) * 0.1, (rowheight - 10) * 0.1)); // Example crop - adjust as needed
+				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(0, 0, 255), 1);
+				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh)); // Example crop - adjust as needed
 				cv::Mat tmpcalcFrame;
+				cv::imshow("", calcFrame);
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
 
 				setBrightness(tmpcalcFrame);
 				brightData.push_back(getBrightness());
-				bool output = pref.schmittTrigger(getBrightness(), 10, 0, false);
+				bool output = pref.schmittTrigger(getBrightness(), uth, lth, false);
 				if (getDepositionBool()) {
 					if (!isComplete) {
 						if (stage < 0) {
@@ -119,26 +121,25 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 							timedelay = 0.0;
 						}
 						if (!isRedeposition && output) {
-							stage += (maxvalue / getTIME());
+							stage += (pztmax / time);
 							setEV();
 						}
 						if (isRedeposition && output) {
-							stage += (maxvalue / (getTIME() + timedelay));
+							stage += (pztmax / (time + timedelay));
 							setEV();
 						}
 						if (!output) {
 							timedelay += 1;
-							stage -= maxvalue / (getTIME() * 0.25);
+							stage -= pztmax / (time * 0.25);
 							setEV();
 							isRedeposition = true;
 						}
-						if (stage > maxvalue && !isComplete) {
+						if (stage > pztmax && !isComplete) {
 							isComplete = true;
-							stage -= maxvalue / getTIME();
+							stage -= pztmax / time;
 							setEV(0);
 						}
-						setPztVolt(stage);
-						pztVolt.push_back(getUpdateofPzt());
+						pztVolt.push_back(stage);
 
 					}
 					if (isComplete) {
@@ -153,17 +154,16 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 						stage = 0;
 					}
 					if (stage > 0) {
-						stage -= (maxvalue / (getTIME() * 0.25));
+						stage -= (pztmax / (time * 0.25));
 					}
-					setPztVolt(stage);
-					pztVolt.push_back(getUpdateofPzt());
+					pztVolt.push_back(stage);
 				}
 				daq.addAnalogChannel("Dev2/ao0");
 				daq.analogOut("Dev2/ao0", getEV());
 				daq.startTasks();
 
 				daq.addAnalogChannel("Dev2/ao1");
-				daq.analogOut("Dev2/ao1", getUpdateofPzt());
+				daq.analogOut("Dev2/ao1", stage);
 				daq.startTasks();
 
 

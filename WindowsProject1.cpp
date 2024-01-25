@@ -23,7 +23,6 @@
 
 #define MAX_LOADSTRING 100
 
-bool stopCamera = true;
 HWND  hFrame;
 std::deque<double> brightData;
 Camera cam;
@@ -59,24 +58,14 @@ void UpdateGraph() {
 		std::deque<double> brightData = cam.GetBrightData();
 		std::deque<double> pzt = cam.GetPZTvolt();
 		PlotGraph pt;
-		pt.completeOfGraph(myUIInstance.GetBDgraphHandle(), brightData,999);
-		pt.completeOfGraph(myUIInstance.GetPZTgraphHandle(), pzt,10);
+		pt.completeOfGraph(myUIInstance.GetBDgraphHandle(), brightData, myUIInstance.getTxtBD(), 999);
+		pt.completeOfGraph(myUIInstance.GetPZTgraphHandle(), pzt, myUIInstance.getTxtPZT(), 10);
 		if (cam.getDepositionBool()) {
 			csv.saveCSV(brightData, pzt, fileName);
 		}
 		if (cam.getCaptureScreenBool()) {
 			rec.CaptureAndSaveScreenshot(fileName);
 			cam.setCaptureScreenBool(FALSE);
-		}
-		double bright = cam.getBrightness();
-		if (myUIInstance.getTxtBD() != NULL) {
-			std::wstring newText = L"Brightness: " + std::to_wstring(bright);
-			SetWindowTextW(myUIInstance.getTxtBD(), newText.c_str());
-		}
-		double gg = cam.getUpdateofPzt();
-		if (myUIInstance.getTxtPZT() != NULL) {
-			std::wstring newText = L"PZTvolt: " + std::to_wstring(gg);
-			SetWindowTextW(myUIInstance.getTxtPZT(), newText.c_str());
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
@@ -194,8 +183,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case ID_BTN_CAMERA_OFF:
 			{
-				cam.setStopCamera(true);
-				stopCamera = true;
+				cam.pauseCamera();
 				stopGraphUpdate = true;
 				
 			}
