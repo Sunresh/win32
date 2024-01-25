@@ -59,7 +59,19 @@
 #define ST_INP_EPV		1039
 #define ST_BTN_TIME		1040
 #define ST_INP_TIME		1041
+#define ST_BTN_SQW		1042
+#define ST_INP_SQW		1043
+#define ST_BTN_SQH		1044
+#define ST_INP_SQH		1045
 
+#define UTH_KEY "UpperTHvalue"
+#define LTH_KEY "LowerTHvalue"
+#define PZT_KEY "PZTMaxValue"
+#define EPV_KEY "ElectrophoreticVoltage"
+#define TIME_KEY "TimeOfDeposition"
+#define SQW_KEY "SquareWidth"
+#define SQH_KEY "SquareHeight"
+#define WM_USER_UPDATE (WM_USER + 1)
 
 
 #define ID_BTN_CAMERA_ON 130

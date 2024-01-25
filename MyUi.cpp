@@ -194,50 +194,80 @@ HWND MyUI::getInputTIME() const {
 	return btnTIME;
 }
 
+void MyUI::pushh(HWND hdmi,int input, std::string key) {
+	PreferenceManager pref;
+	wchar_t buffer[256];
+	UINT textLength = GetDlgItemTextW(hdmi, input, buffer, sizeof(buffer) / sizeof(buffer[0]));
+	if (textLength > 0) {
+		wchar_t* text = buffer;
+		pref.SetPreferenceW(key, text);
+	}
+	else {}
+}
 
 INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(lParam);
 	PreferenceManager pref;
+	HWND hubtn = GetDlgItem(hDlg, ST_INP_UTH);
+	HWND hlbtn = GetDlgItem(hDlg, ST_INP_LTH);
+	HWND hpbtn = GetDlgItem(hDlg, ST_INP_PZT);
+	HWND hebtn = GetDlgItem(hDlg, ST_INP_EPV);
+	HWND htbtn = GetDlgItem(hDlg, ST_INP_TIME);
+	HWND sqwval = GetDlgItem(hDlg, ST_INP_SQW);
+	HWND sqhval = GetDlgItem(hDlg, ST_INP_SQH);
+
 	switch (message)
 	{
+	case WM_CREATE:
+	{
+		SetWindowTextW(hubtn, L"oi");
+	}
+	break;
 	case WM_COMMAND:
 	{
+
 		int wmId = LOWORD(wParam);
-		UINT textLength;
 		switch (wmId)
 		{
 		case (IDC_CANCEL):
 			EndDialog(hDlg, LOWORD(wParam));
 			return (INT_PTR)TRUE;
 		case IDC_APPLY:
-
+			loadPrefv(hubtn, UTH_KEY);
+			loadPrefv(hlbtn, LTH_KEY);
+			loadPrefv(hpbtn, PZT_KEY);
+			loadPrefv(hebtn, EPV_KEY);
+			loadPrefv(htbtn, TIME_KEY);
+			loadPrefv(sqwval, SQW_KEY);
+			loadPrefv(sqhval, SQH_KEY);
 			break;
 
 		case ST_BTN_UTH:
-			wchar_t buffer[256];
-			textLength = GetDlgItemTextW(hDlg, ST_INP_UTH, buffer, sizeof(buffer) / sizeof(buffer[0]));
-			if (textLength > 0) {
-				wchar_t* text = buffer;
-				pref.SetPreferenceW("UpperTH", text);
-			}
-			else {}
+			pushh(hDlg, ST_INP_UTH, UTH_KEY);
 			break;
 
 		case ST_BTN_LTH:
-
+			pushh(hDlg, ST_INP_LTH, LTH_KEY);
 			break;
 
 		case ST_BTN_PZT:
-
+			pushh(hDlg, ST_INP_PZT, PZT_KEY);
 			break;
 
 		case ST_BTN_EPV:
-
+			pushh(hDlg, ST_INP_EPV, EPV_KEY);
 			break;
 
 		case ST_BTN_TIME:
+			pushh(hDlg, ST_INP_TIME, TIME_KEY);
+			break;
+		case ST_BTN_SQW:
+			pushh(hDlg, ST_INP_SQW, SQW_KEY);
+			break;
 
+		case ST_BTN_SQH:
+			pushh(hDlg, ST_INP_SQH, SQH_KEY);
 			break;
 
 		default:

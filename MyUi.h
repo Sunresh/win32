@@ -18,7 +18,10 @@ public:
 	static HWND MyUI::InputSaveButton(const wchar_t* inputText, int x, int y, int w, int h, const wchar_t* buttonText, HWND parent, int inputId, int buttonId, DWORD inputStyle= WS_BORDER, DWORD buttonStyle= BS_PUSHBUTTON);
 	HWND mainUi(HWND parent);
 	void MyUI::loadPref(HWND hwnd, std::string key);
-	void MyUI::loadPrefv(HWND hwnd, std::string key);
+	static void MyUI::loadPrefv(HWND hwnd, std::string key);
+
+	static void pushh(HWND hdmi,int input,std::string key);
+	PreferenceManager* pref = nullptr;
 
 	HWND GetCamHandle() const;
 	HWND GetZoomCamHandle() const;
