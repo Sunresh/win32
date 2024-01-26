@@ -68,6 +68,7 @@
 #define ST_BTN_SQY1		1048
 #define ST_INP_SQY1		1049
 #define IDC_SAVEALL		1050
+#define ST_INP_CURRENT_PATH 1051
 
 
 #define UTH_KEY "UpperTHvalue"
@@ -79,6 +80,9 @@
 #define SQH_KEY "SquareHeight"
 #define SQX1_KEY "Squareoriginx1"
 #define SQY1_KEY "Squareoriginy1"
+#define CURRENT_FILENAME_KEY "Thisisfilename"
+#define CURRENT_DAY_KEY "TodaysDate"
+#define CURRENT_FOLDER "MYfolder"
 #define WM_USER_UPDATE (WM_USER + 1)
 
 

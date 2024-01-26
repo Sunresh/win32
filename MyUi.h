@@ -22,7 +22,7 @@ public:
 
 	static void pushh(HWND hdmi,int input,std::string key);
 	PreferenceManager* pref = nullptr;
-
+	std::string GetYYMMDD();
 	HWND GetCamHandle() const;
 	HWND GetZoomCamHandle() const;
 	HWND GetBDgraphHandle() const;

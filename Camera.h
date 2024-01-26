@@ -6,6 +6,7 @@
 #include "BrightnessCalculation.h"
 #include "preferencemanager.h"
 #include "MyUi.h"
+#include "ExportCsv.h"
 
 class Camera {
 public:
@@ -27,7 +28,7 @@ public:
 	double pztmax = 15;
 	double epv = 2;
 	double kk = 15;
-
+	ExportCSV csv;
 	BrightnessClass my;
 	MyUI myUIInstance;
 	PreferenceManager pref;
@@ -53,7 +54,7 @@ public:
 	bool iscapture = FALSE;
 	void Camera::setCaptureScreenBool(bool stop);
 	bool Camera::getCaptureScreenBool();
-
+	std::string current_filename ="ExampleND";
 
 };
 

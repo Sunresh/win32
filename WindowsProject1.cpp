@@ -47,8 +47,16 @@ void GetFormattedDateTime(char* formattedDateTime, size_t bufferSize) {
 	_snprintf_s(formattedDateTime, bufferSize, _TRUNCATE, "%02d%02d%02d_%02d%02d%02d",
 		st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 }
+void GetYYMMDD(char* formattedDateTime, size_t bufferSize) {
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+
+	_snprintf_s(formattedDateTime, bufferSize, _TRUNCATE, "%02d%02d%02d",
+		st.wYear % 100, st.wMonth, st.wDay);
+}
 
 void UpdateGraph() {
+	PreferenceManager pref;
 	const size_t bufferSize = 14;
 	char formattedDateTime[bufferSize];
 	GetFormattedDateTime(formattedDateTime, bufferSize);
@@ -56,12 +64,15 @@ void UpdateGraph() {
 
 	while (!stopGraphUpdate) {
 		std::deque<double> brightData = cam.GetBrightData();
-		std::deque<double> pzt = cam.GetPZTvolt();
+		std::deque<double> pztVolt = cam.GetPZTvolt();
 		PlotGraph pt;
 		pt.completeOfGraph(myUIInstance.GetBDgraphHandle(), brightData, myUIInstance.getTxtBD(), 999);
-		pt.completeOfGraph(myUIInstance.GetPZTgraphHandle(), pzt, myUIInstance.getTxtPZT(), 10);
+		pt.completeOfGraph(myUIInstance.GetPZTgraphHandle(), pztVolt, myUIInstance.getTxtPZT(), 10);
 		if (cam.getDepositionBool()) {
-			csv.saveCSV(brightData, pzt, fileName);
+			pref.SetPreference(CURRENT_FILENAME_KEY, fileName);
+			//csv.saveCSV(brightData, pztVolt, fileName);
+			//csv.saveCSV(brightData, pzt, fileName);
+			//cam.setFilename(fileName);
 		}
 		if (cam.getCaptureScreenBool()) {
 			rec.CaptureAndSaveScreenshot(fileName);

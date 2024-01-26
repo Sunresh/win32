@@ -114,7 +114,26 @@ HWND MyUI::mainUi(HWND hWnd) {
 	btnTIME = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 10 * buttonHeight, buttonWidth, buttonHeight, L"Save Time", hWnd, INPUT_TIME, BTN_TIME, NULL);
 	loadPrefv(btnTIME, "TIME");
 
+	//check folder and create if not allout\20240305 folder inside folder
+	std::string folderName = "allout";
+	std::string ddaa=GetYYMMDD();
+	PreferenceManager pref;
+	if (pref.CheckAndCreateFolder(folderName, ddaa)) {
+		///
+	}
+
 	return hFrame;
+}
+
+std::string MyUI::GetYYMMDD() {
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+
+	char formattedDateTime[7];  // 2 digits for year, 2 for month, 2 for day, plus 1 for null terminator
+	_snprintf_s(formattedDateTime, sizeof(formattedDateTime), _TRUNCATE, "%02d%02d%02d",
+		st.wYear % 100, st.wMonth, st.wDay);
+
+	return std::string(formattedDateTime);
 }
 
 void MyUI::loadPref(HWND hwnd, std::string key) {
@@ -218,6 +237,7 @@ INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPA
 		HWND sqhval = GetDlgItem(hDlg, ST_INP_SQH);
 		HWND sqx1p = GetDlgItem(hDlg, ST_INP_SQX1);
 		HWND sqy1p = GetDlgItem(hDlg, ST_INP_SQY1);
+		HWND path = GetDlgItem(hDlg, ST_INP_CURRENT_PATH);
 
 	switch (message)
 	{
@@ -240,6 +260,7 @@ INT_PTR CALLBACK MyUI::CameraOptions(HWND hDlg, UINT message, WPARAM wParam, LPA
 			loadPrefv(sqhval, SQH_KEY);
 			loadPrefv(sqx1p, SQX1_KEY);
 			loadPrefv(sqy1p, SQY1_KEY);
+			loadPrefv(path, CURRENT_FOLDER);
 			break;
 
 		case IDC_SAVEALL:

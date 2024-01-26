@@ -57,3 +57,42 @@ bool PreferenceManager::schmittTrigger(double inputValue, double upperThreshold,
     }
     return output;
 }
+
+
+bool PreferenceManager::CheckAndCreateFolder(std::string folder, std::string subfolder) {
+
+    int size = MultiByteToWideChar(CP_UTF8, 0, folder.c_str(), -1, nullptr, 0);
+    int sizer = MultiByteToWideChar(CP_UTF8, 0, subfolder.c_str(), -1, nullptr, 0);
+
+    wchar_t* folderName = new wchar_t[size];
+    wchar_t* subfolderName = new wchar_t[sizer];
+
+    MultiByteToWideChar(CP_UTF8, 0, folder.c_str(), -1, folderName, size);
+    MultiByteToWideChar(CP_UTF8, 0, subfolder.c_str(), -1, subfolderName, sizer);
+
+    wchar_t desktopPath[MAX_PATH];
+    if (SHGetFolderPathW(NULL, CSIDL_DESKTOPDIRECTORY, NULL, 0, desktopPath) != S_OK) {
+        return false;
+    }
+
+    wchar_t fullPath[MAX_PATH];
+    if (PathCombineW(fullPath, desktopPath, folderName) == NULL) {
+        return false;
+    }
+
+    CreateDirectoryW(fullPath, NULL);
+
+    wchar_t subfolderPath[MAX_PATH];
+    if (PathCombineW(subfolderPath, fullPath, subfolderName) == NULL) {
+        return false;
+    }
+
+    CreateDirectoryW(subfolderPath, NULL);
+
+    SetPreferenceW(CURRENT_FOLDER, subfolderPath);
+    delete[] subfolderName;
+    delete[] folderName;
+
+    return true;
+}
+

@@ -61,6 +61,7 @@ void Camera::pauseCamera() {
 	sqw = std::stod(pref.getprefString(SQW_KEY));
 	sqw = std::stod(pref.getprefString(SQH_KEY));
 }
+
 void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 {
 	OutputDebugStringW(L"\n\n\n\naayyo\n\n\n\n\n");
@@ -115,6 +116,7 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 				brightData.push_back(getBrightness());
 				bool output = pref.schmittTrigger(getBrightness(), uth, lth, false);
 				if (getDepositionBool()) {
+					current_filename = pref.getprefString(CURRENT_FILENAME_KEY);
 					if (!isComplete) {
 						if (stage < 0) {
 							stage = 0;
@@ -147,6 +149,7 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 						setCaptureScreenBool(TRUE);
 						setDepositionBool(FALSE);
 					}
+					csv.saveCSV(brightData, pztVolt, current_filename);
 				}
 				if (!getDepositionBool()) {
 					setEV(0);
