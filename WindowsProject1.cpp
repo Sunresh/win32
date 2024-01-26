@@ -27,6 +27,8 @@ HWND  hFrame;
 std::deque<double> brightData;
 Camera cam;
 MyDaq daq;
+TaskHandle lserOn = nullptr;
+TaskHandle lserOff = nullptr;
 ExportCSV csv;
 ScreenRecord rec;
 MyUI myUIInstance;
@@ -201,16 +203,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			case ID_BTN_LASER_ON:
 			{
-				daq.addDigitalChannel("Dev2/port0/line0");
-				daq.digitalOut("Dev2/port0/line0", true);
-				daq.startTasks();
+				DAQmxCreateTask("",&lserOn);
+				DAQmxCreateDOChan(lserOn, "Dev2/port0/line0","",DAQmx_Val_ChanForAllLines);
+				uInt32 data = true;
+				DAQmxWriteDigitalU32(lserOn,1,1,10.0,DAQmx_Val_GroupByChannel,&data,nullptr,nullptr);
+				DAQmxStopTask(lserOn);
+				DAQmxClearTask(lserOn);
 			}
 			break;
 			case ID_BTN_LASER_OFF:
 			{
-				daq.addDigitalChannel("Dev2/port0/line0");
-				daq.digitalOut("Dev2/port0/line0", false);
-				daq.startTasks();
+				DAQmxCreateTask("", &lserOff);
+				DAQmxCreateDOChan(lserOff, "Dev2/port0/line0", "", DAQmx_Val_ChanForAllLines);
+				uInt32 data = false;
+				DAQmxWriteDigitalU32(lserOff, 1, 1, 10.0, DAQmx_Val_GroupByChannel, &data, nullptr, nullptr);
+				DAQmxStopTask(lserOff);
+				DAQmxClearTask(lserOff);
 			}
 			break;
 			case ID_BTN_EPDV0:
