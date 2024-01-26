@@ -88,6 +88,15 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 		bool isComplete = FALSE;
 		bool isRedeposition = FALSE;
 
+
+		DAQmxCreateTask("", &epvtask);
+		DAQmxCreateTask("", &pztvtask);
+		DAQmxCreateAOVoltageChan(epvtask, "Dev2/ao0", "ao_channel", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
+		DAQmxCreateAOVoltageChan(pztvtask, "Dev2/ao1", "ao_channel", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
+		DAQmxCfgSampClkTiming(epvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
+		DAQmxCfgSampClkTiming(pztvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
+
+
 		HDC hdc = GetDC(hWnd); // Obtain device context for the window
 		HDC hdc1 = GetDC(hWn); // Obtain device context for the window
 		cv::Mat dframe, frame;
@@ -109,7 +118,7 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(0, 0, 255), 1);
 				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh)); // Example crop - adjust as needed
 				cv::Mat tmpcalcFrame;
-				cv::imshow("", calcFrame);
+			
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
 
 				setBrightness(tmpcalcFrame);
@@ -124,35 +133,35 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 						}
 						if (!isRedeposition && output) {
 							stage += (pztmax / time);
-							setEV();
+							epv = 2;
 						}
 						if (isRedeposition && output) {
 							stage += (pztmax / (time + timedelay));
-							setEV();
+							epv = 2;
 						}
 						if (!output) {
 							timedelay += 1;
 							stage -= pztmax / (time * 0.25);
-							setEV();
+							epv = 2;
 							isRedeposition = true;
 						}
 						if (stage > pztmax && !isComplete) {
 							isComplete = true;
 							stage -= pztmax / time;
-							setEV(0);
+							epv = 0;
 						}
 						pztVolt.push_back(stage);
 
 					}
 					if (isComplete) {
-						setEV(0);
+						epv = 0;
 						setCaptureScreenBool(TRUE);
 						setDepositionBool(FALSE);
 					}
 					csv.saveCSV(brightData, pztVolt, current_filename);
 				}
 				if (!getDepositionBool()) {
-					setEV(0);
+					epv = 0;
 					if (stage < 0) {
 						stage = 0;
 					}
@@ -161,13 +170,8 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 					}
 					pztVolt.push_back(stage);
 				}
-				daq.addAnalogChannel("Dev2/ao0");
-				daq.analogOut("Dev2/ao0", getEV());
-				daq.startTasks();
-
-				daq.addAnalogChannel("Dev2/ao1");
-				daq.analogOut("Dev2/ao1", stage);
-				daq.startTasks();
+				DAQmxWriteAnalogF64(epvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &epv, nullptr, nullptr);
+				DAQmxWriteAnalogF64(pztvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &stage, nullptr, nullptr);
 
 
 				// Display original frame in g_hFrame1
@@ -191,6 +195,8 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 				break;
 			}
 		}
+		DAQmxClearTask(epvtask);
+		DAQmxClearTask(pztvtask);
 		cap.release();
 		ReleaseDC(hWnd, hdc);
 		ReleaseDC(hWn, hdc1);

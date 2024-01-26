@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 #include "opencv2/opencv.hpp"
-#include "daq.h"
+#include <NIDAQmx.h>
 #include <Windows.h>
 #include "BrightnessCalculation.h"
 #include "preferencemanager.h"
@@ -17,7 +17,8 @@ public:
 	std::deque<double> brightData, pztVolt;
 	double brightness = 0;
 	bool startDepo = false;
-	MyDaq daq;
+	TaskHandle epvtask = nullptr;
+	TaskHandle pztvtask = nullptr;
 	double sqw = 15;
 	double sqh = 15;
 	double sqx1 = 15;
