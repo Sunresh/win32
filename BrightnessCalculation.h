@@ -16,7 +16,7 @@ public:
 	void setUpperlimit(double uplimit);
 	double getUpperlimit();
 	double differencesOf(cv::Mat& iframe);
-
+	double BrightnessClass::pdevidesum(cv::Mat& iframe);
 };
 
 
