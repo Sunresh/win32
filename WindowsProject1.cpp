@@ -46,8 +46,6 @@ BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 std::atomic<double> pztVolt(0.0);
 
-HWND g_hMainWindow = nullptr;
-
 void yymmdd_hhmmss(char* formattedDateTime, size_t bufferSize) {
 	SYSTEMTIME st;
 	GetLocalTime(&st);
@@ -112,20 +110,25 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    UpdateWindow(hWnd);
    return TRUE;
 }
-void btnhandle(HWND input,HWND output,std::string key) {
-	PreferenceManager pref;
-	std::string ma = myUIInstance.GetInputText(input);
-	pref.SetPreference(key, ma);
-	if (HWND pztTextHandle = output)
-	{
-		std::stringstream newTextStream;
-		newTextStream << key << ":" << ma;
-		std::string text = newTextStream.str();
-		std::wstring newText(text.begin(), text.end());
-		SetWindowTextW(pztTextHandle, newText.c_str());
-		//myUIInstance.mess(newText.c_str());
-	}
+void pushh(int controlId,std::string key) {
+	HWND hInput = GetDlgItem(hFrame, controlId);
 
+	// Get the length of the text
+	int textLength = GetWindowTextLengthW(hInput) + 1;
+
+	// Allocate a buffer to hold the text
+	wchar_t* buffer = new wchar_t[textLength];
+
+	// Get the text from the input control
+	GetWindowTextW(hInput, buffer, textLength);
+
+	// Convert to std::string
+	std::string result(buffer, buffer + textLength - 1); // Exclude null terminator from the length
+	// Clean up
+	delete[] buffer;
+
+	PreferenceManager pref;
+	pref.SetPreference(key, result);
 }
 
 
@@ -143,7 +146,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	case WM_CREATE:
 	{
-		g_hMainWindow = hWnd;
 		hFrame = myUIInstance.mainUi(hWnd);
 		SetWindowLongPtr(hFrame, GWLP_WNDPROC, (LONG_PTR)WndProc);
 	}
@@ -217,42 +219,47 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case BTN_UTH:
 			{
-				btnhandle(myUIInstance.getInputUth(), myUIInstance.getTxtUth(), "UpperTH");
+				pushh(INPUT_UTH, UTH_KEY);
 			}
 			break;
 			case BTN_LTH:
 			{
-				btnhandle(myUIInstance.getInputlth(), myUIInstance.getTxtLth(), "LowerLH");
+				pushh(INPUT_LTH, LTH_KEY);
 			}
 			break;
 			case BTN_PZT:
 			{
-				btnhandle(myUIInstance.getInputPZT(), myUIInstance.getTxtPZT(), "PZT");
+				pushh(INPUT_PZT, PZT_KEY);
 			}
 			break;
 			case BTN_SQH:
 			{
-				btnhandle(myUIInstance.getInputSQH(), myUIInstance.getTxtPZT(), "SQH");
+				pushh(INPUT_SQH, SQH_KEY);
 			}
 			break;
 			case BTN_SQW:
 			{
-				btnhandle(myUIInstance.getInputSQW(), myUIInstance.getTxtPZT(), "SQW");
+				pushh(INPUT_SQW, SQW_KEY);
 			}
 			break;
 			case BTN_SQX:
 			{
-				btnhandle(myUIInstance.getInputSQX(), myUIInstance.getTxtPZT(), "SQX");
+				pushh(INPUT_SQX, SQX1_KEY);
 			}
 			break;
 			case BTN_SQY:
 			{
-				btnhandle(myUIInstance.getInputSQY(), myUIInstance.getTxtPZT(), "SQY");
+				pushh(INPUT_SQY, SQY1_KEY);
 			}
 			break;
 			case BTN_TIME:
 			{
-				btnhandle(myUIInstance.getInputTIME(), myUIInstance.getTxtTIME(), "TIME");
+				pushh(INPUT_TIME, TIME_KEY);
+			}
+			break;
+			case CAM_INDEX_BTN:
+			{
+				pushh(CAM_INDEX_INPUT, CameraIndex);
 			}
 			break;
 

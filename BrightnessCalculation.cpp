@@ -300,6 +300,10 @@ double BrightnessClass::differencesOf(cv::Mat& iframe) {
 		if (!f1.empty() && !f20.empty()) {
 			for (int y = 0; y < height; ++y) {
 				for (int x = 0; x < width; ++x) {
+
+
+
+
 					Pij = abs(f1.at<uchar>(y, x) - f2.at<uchar>(y, x)) +
 						abs(f2.at<uchar>(y, x) - f3.at<uchar>(y, x)) +
 						abs(f3.at<uchar>(y, x) - f4.at<uchar>(y, x)) +

@@ -69,6 +69,9 @@
 #define ST_INP_SQY1		1049
 #define IDC_SAVEALL		1050
 #define ST_INP_CURRENT_PATH 1051
+#define CAM_INDEX_BTN		1052
+#define CAM_INDEX_INPUT		1053
+
 
 
 #define UTH_KEY "UpperTHvalue"
@@ -83,6 +86,7 @@
 #define CURRENT_FILENAME_KEY "Thisisfilename"
 #define CURRENT_DAY_KEY "TodaysDate"
 #define CURRENT_FOLDER "MYfolder"
+#define CameraIndex     "CameraIndex"
 #define WM_USER_UPDATE (WM_USER + 1)
 
 
