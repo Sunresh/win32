@@ -36,7 +36,10 @@ HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING], szWindowClass[MAX_LOADSTRING];
 
 std::mutex mtx;
+
 std::unique_ptr<Camera> camPtr;
+std::unique_ptr<PreferenceManager> pref;
+bool laserState = false;
 
 ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
@@ -45,20 +48,12 @@ std::atomic<double> pztVolt(0.0);
 
 HWND g_hMainWindow = nullptr;
 
-void GetFormattedDateTime(char* formattedDateTime, size_t bufferSize) {
+void yymmdd_hhmmss(char* formattedDateTime, size_t bufferSize) {
 	SYSTEMTIME st;
 	GetLocalTime(&st);
 	_snprintf_s(formattedDateTime, bufferSize, _TRUNCATE, "%02d%02d%02d_%02d%02d%02d",
 		st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 }
-void GetYYMMDD(char* formattedDateTime, size_t bufferSize) {
-	SYSTEMTIME st;
-	GetLocalTime(&st);
-
-	_snprintf_s(formattedDateTime, bufferSize, _TRUNCATE, "%02d%02d%02d",
-		st.wYear % 100, st.wMonth, st.wDay);
-}
-
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -137,7 +132,6 @@ void btnhandle(HWND input,HWND output,std::string key) {
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PreferenceManager pref;
-
     switch (message)
     {
 	case WM_FRAMERATE_UPDATED:
@@ -161,8 +155,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             switch (wmId)
             {
 			case ID_BTN_CAMERA_ON: {
-				camPtr = std::make_unique<Camera>();
-				camPtr->DisplayCameraFrame();
+				PreferenceManager pref;
+				if (pref.SetPreference(CURRENT_FILENAME_KEY, myUIInstance.yymmdd_hhmmss())) {
+					camPtr = std::make_unique<Camera>();
+					camPtr->DisplayCameraFrame();
+				}
 				break;
 			}
 			case ID_BTN_CAMERA_OFF: {
@@ -171,12 +168,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			case ID_BTN_LASER_ON:
 			{
-				DAQmxCreateTask("",&lserOn);
-				DAQmxCreateDOChan(lserOn, "Dev2/port0/line0","",DAQmx_Val_ChanForAllLines);
-				uInt32 data = true;
-				DAQmxWriteDigitalU32(lserOn,1,1,10.0,DAQmx_Val_GroupByChannel,&data,nullptr,nullptr);
-				DAQmxStopTask(lserOn);
-				DAQmxClearTask(lserOn);
+				TaskHandle taskHandle;
+				DAQmxCreateTask("", &taskHandle);
+				DAQmxCreateDOChan(taskHandle, "Dev2/port0/line0", "", DAQmx_Val_ChanForAllLines);
+				uInt32 data = (laserState ? false : true);
+				DAQmxWriteDigitalU32(taskHandle, 1, 1, 10.0, DAQmx_Val_GroupByChannel, &data, nullptr, nullptr);
+				DAQmxStopTask(taskHandle);
+				DAQmxClearTask(taskHandle);
+
+				laserState = !laserState; // Toggle the laser state
 			}
 			break;
 			case ID_BTN_LASER_OFF:

@@ -22,7 +22,7 @@ public:
 	static void pushh(HWND hdmi,int input,std::string key);
 	PreferenceManager* pref = nullptr;
 	std::string GetYYMMDD();
-
+	std::string MyUI::yymmdd_hhmmss();
 	HWND getTxtBD() const;
 	HWND getTxtUth() const;
 	HWND getTxtLth() const;

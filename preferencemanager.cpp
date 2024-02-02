@@ -2,23 +2,34 @@
 
 
 // Function to save preferences to the registry
-void PreferenceManager::SetPreference(const std::string& key, const std::string& value) {
+bool PreferenceManager::SetPreference(const std::string& key, const std::string& value) {
     std::wstring wideKey(key.begin(), key.end());
     std::wstring wideValue(value.begin(), value.end());
-
     HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\YourAppName", 0, nullptr, 0, KEY_SET_VALUE, nullptr, &hKey, nullptr) == ERROR_SUCCESS) {
-        RegSetValueExW(hKey, wideKey.c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(wideValue.c_str()), static_cast<DWORD>(sizeof(wchar_t) * (wideValue.length() + 1)));
-        RegCloseKey(hKey);
+        if (RegSetValueExW(hKey, wideKey.c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(wideValue.c_str()), static_cast<DWORD>(sizeof(wchar_t) * (wideValue.length() + 1))) == ERROR_SUCCESS) {
+            RegCloseKey(hKey);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
+    return false;
 }
-void PreferenceManager::SetPreferenceW(const std::string& key, const wchar_t* text) {
+bool PreferenceManager::SetPreferenceW(const std::string& key, const wchar_t* text) {
     std::wstring wideKey(key.begin(), key.end());
     HKEY hKey;
     if (RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\YourAppName", 0, nullptr, 0, KEY_SET_VALUE, nullptr, &hKey, nullptr) == ERROR_SUCCESS) {
-        RegSetValueExW(hKey, wideKey.c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(text), static_cast<DWORD>((wcslen(text) + 1) * sizeof(wchar_t)));
-        RegCloseKey(hKey);
+        if (RegSetValueExW(hKey, wideKey.c_str(), 0, REG_SZ, reinterpret_cast<const BYTE*>(text), static_cast<DWORD>((wcslen(text) + 1) * sizeof(wchar_t))) == ERROR_SUCCESS) {
+            RegCloseKey(hKey);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
+    return false;
 }
 std::string PreferenceManager::getprefString(const std::string& key) {
     std::wstring wideKey(key.begin(), key.end());

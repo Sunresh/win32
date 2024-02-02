@@ -75,9 +75,10 @@ void Camera::DisplayCameraFrame()
 		time = std::stod(pref.getprefString(TIME_KEY));
 		uth = std::stod(pref.getprefString(UTH_KEY));
 		lth = std::stod(pref.getprefString(LTH_KEY));
-		epv = std::stod(pref.getprefString(EPV_KEY));
 		pztmax = std::stod(pref.getprefString(PZT_KEY));
 		cap.open(0);
+
+		//cap.open("C:\\Users\\nares\\Desktop\\LAB\\movie\\close\\one.mp4");
 		if (!cap.isOpened()) {
 			return;
 		}
@@ -123,36 +124,41 @@ void Camera::DisplayCameraFrame()
 							timedelay = 0.0;
 						}
 						if (!isRedeposition && output) {
-							stage += (pztmax / time);
-							epv = 2;
+							if (stage < (0.04 * pztmax)) {
+								stage += (0.0002 * pztmax);
+							}
+							else {
+								stage += pztmax / (time);
+							}
+							setEV(std::stod(pref.getprefString(EPV_KEY)));
 						}
 						if (isRedeposition && output) {
 							stage += (pztmax / (time + timedelay));
-							epv = 2;
+							setEV(std::stod(pref.getprefString(EPV_KEY)));
 						}
 						if (!output) {
 							timedelay += 1;
 							stage -= pztmax / (time * 0.25);
-							epv = 2;
+							setEV(0);
 							isRedeposition = true;
 						}
 						if (stage > pztmax && !isComplete) {
 							isComplete = true;
 							stage -= pztmax / time;
-							epv = 0;
+							setEV(0);
 						}
 						pztVolt.push_back(stage);
 
 					}
 					if (isComplete) {
-						epv = 0;
+						setEV(0);
 						setCaptureScreenBool(TRUE);
 						setDepositionBool(FALSE);
 					}
 					csv.saveCSV(brightData, pztVolt, current_filename);
 				}
 				if (!getDepositionBool()) {
-					epv = 0;
+					setEV(0);
 					if (stage < 0) {
 						stage = 0;
 					}
@@ -161,7 +167,8 @@ void Camera::DisplayCameraFrame()
 					}
 					pztVolt.push_back(stage);
 				}
-				DAQmxWriteAnalogF64(epvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &epv, nullptr, nullptr);
+				double hhee = getEV();
+				DAQmxWriteAnalogF64(epvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &hhee, nullptr, nullptr);
 				DAQmxWriteAnalogF64(pztvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &stage, nullptr, nullptr);
 
 				// Display the original and cropped frames combined in a single window
@@ -224,6 +231,12 @@ void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double up
 		cv::Point endPoint(i + startPointX, height - static_cast<int>(y));
 		line(frame, startPoint, endPoint, cv::Scalar(0, 0, 0), 1);
 		startPoint = endPoint;
+	}
+	if (getEV() == 0) {
+		drawRectangle(frame, 0, 0, 10, 10, cv::Scalar(0, 0, 255), -1);
+	}
+	else {
+		drawRectangle(frame, 0, 0, 10, 10, cv::Scalar(0,255,0), -1);
 	}
 	/*drawYAxisValues(frame, pr.uBGR(0, 0, 0), upperLimit, yxix);
 	drawXAxis(frame, pr.uBGR(0, 0, 0));*/

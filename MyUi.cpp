@@ -134,6 +134,15 @@ std::string MyUI::GetYYMMDD() {
 
 	return std::string(formattedDateTime);
 }
+std::string MyUI::yymmdd_hhmmss() {
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+
+	char formattedDateTime[14];  // 2 digits for year, 2 for month, 2 for day, plus 1 for null terminator
+	_snprintf_s(formattedDateTime, sizeof(formattedDateTime), _TRUNCATE, "%02d%02d%02d_%02d%02d%02d",
+		st.wYear % 100, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
+	return std::string(formattedDateTime);
+}
 
 void MyUI::loadPref(HWND hwnd, std::string key) {
 	PreferenceManager pref;

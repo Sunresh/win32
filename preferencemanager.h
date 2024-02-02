@@ -14,9 +14,10 @@
 
 class PreferenceManager {
 public:
+    PreferenceManager(){}
     std::string getprefString(const std::string& key);
-    void SetPreference(const std::string& key, const std::string& value);
-    void SetPreferenceW(const std::string& key, const wchar_t* text);
+    bool SetPreference(const std::string& key, const std::string& value);
+    bool SetPreferenceW(const std::string& key, const wchar_t* text);
     bool schmittTrigger(double inputValue, double upperThreshold, double lowerThreshold, bool output);
     bool CheckAndCreateFolder(std::string folderName,std::string sub);
 private:
