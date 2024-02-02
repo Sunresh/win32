@@ -10,6 +10,12 @@
 
 class Camera {
 public:
+	Camera() {
+		OutputDebugStringW(L"\n\nStarting Camera class\n\n");
+	}
+	~Camera() {
+		OutputDebugStringW(L"\n\nStopping Camera class\n\n");
+	}
 	int id = 0;
 	cv::VideoCapture cap;
 	int getId;
@@ -51,12 +57,12 @@ public:
 
 	void setBrightness(cv::Mat& tmpcalcFrame);
 	const double getBrightness();
-	void DisplayCameraFrame(HWND hWnd, HWND hWn);
+	void DisplayCameraFrame();
 	bool iscapture = FALSE;
 	void Camera::setCaptureScreenBool(bool stop);
 	bool Camera::getCaptureScreenBool();
 	std::string current_filename ="ExampleND";
-
+	void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double upperLimit, const std::string& yxix);
 };
 
 

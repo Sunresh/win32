@@ -19,13 +19,13 @@
 #include "preferencemanager.h"
 #include "MyUi.h"
 #include "ExportCsv.h"
+#include <memory>
 
 
 #define MAX_LOADSTRING 100
 
 HWND  hFrame;
 std::deque<double> brightData;
-Camera cam;
 MyDaq daq;
 TaskHandle lserOn = nullptr;
 TaskHandle lserOff = nullptr;
@@ -35,10 +35,12 @@ MyUI myUIInstance;
 HINSTANCE hInst;
 WCHAR szTitle[MAX_LOADSTRING], szWindowClass[MAX_LOADSTRING];
 
+std::mutex mtx;
+std::unique_ptr<Camera> camPtr;
+
 ATOM MyRegisterClass(HINSTANCE hInstance);
 BOOL InitInstance(HINSTANCE, int);
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
-std::atomic<bool> stopGraphUpdate(true);
 std::atomic<double> pztVolt(0.0);
 
 HWND g_hMainWindow = nullptr;
@@ -55,33 +57,6 @@ void GetYYMMDD(char* formattedDateTime, size_t bufferSize) {
 
 	_snprintf_s(formattedDateTime, bufferSize, _TRUNCATE, "%02d%02d%02d",
 		st.wYear % 100, st.wMonth, st.wDay);
-}
-
-void UpdateGraph() {
-	PreferenceManager pref;
-	const size_t bufferSize = 14;
-	char formattedDateTime[bufferSize];
-	GetFormattedDateTime(formattedDateTime, bufferSize);
-	const char* fileName = formattedDateTime;
-
-	while (!stopGraphUpdate) {
-		std::deque<double> brightData = cam.GetBrightData();
-		std::deque<double> pztVolt = cam.GetPZTvolt();
-		PlotGraph pt;
-		pt.completeOfGraph(myUIInstance.GetBDgraphHandle(), brightData, myUIInstance.getTxtBD(), 999);
-		pt.completeOfGraph(myUIInstance.GetPZTgraphHandle(), pztVolt, myUIInstance.getTxtPZT(), 10);
-		if (cam.getDepositionBool()) {
-			pref.SetPreference(CURRENT_FILENAME_KEY, fileName);
-			//csv.saveCSV(brightData, pztVolt, fileName);
-			//csv.saveCSV(brightData, pzt, fileName);
-			//cam.setFilename(fileName);
-		}
-		if (cam.getCaptureScreenBool()) {
-			rec.CaptureAndSaveScreenshot(fileName);
-			cam.setCaptureScreenBool(FALSE);
-		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
 }
 
 
@@ -128,7 +103,12 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance;
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+   const int x = std::round(0.50 * GetSystemMetrics(SM_CXSCREEN));
+   const int y = std::round(0.10 * GetSystemMetrics(SM_CYSCREEN));
+   const int w = std::round(0.50 * GetSystemMetrics(SM_CXSCREEN));
+   const int h = std::round(0.85 * GetSystemMetrics(SM_CYSCREEN));
+
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, x,y, w, h, nullptr, nullptr, hInstance, nullptr);
    if (!hWnd)
    {
       return FALSE;
@@ -152,6 +132,7 @@ void btnhandle(HWND input,HWND output,std::string key) {
 	}
 
 }
+
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -179,28 +160,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             int wmId = LOWORD(wParam);
             switch (wmId)
             {
-			case ID_BTN_CAMERA_ON:
-			{
-				cam.setStopCamera(false);
-				stopGraphUpdate = false;
-				std::thread graphThread(UpdateGraph);
-				graphThread.detach();
-
-				std::thread displayThread([&]() {
-					cam.DisplayCameraFrame(myUIInstance.GetCamHandle(), myUIInstance.GetZoomCamHandle());
-					InvalidateRect(hWnd, NULL, TRUE);
-					});
-				displayThread.detach();
-
-			}
-			break;
-			case ID_BTN_CAMERA_OFF:
-			{
-				cam.pauseCamera();
-				stopGraphUpdate = true;
-				
-			}
+			case ID_BTN_CAMERA_ON: {
+				camPtr = std::make_unique<Camera>();
+				camPtr->DisplayCameraFrame();
 				break;
+			}
+			case ID_BTN_CAMERA_OFF: {
+				camPtr->setStopCamera(FALSE);
+				break;
+			}
 			case ID_BTN_LASER_ON:
 			{
 				DAQmxCreateTask("",&lserOn);
@@ -237,21 +205,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case ID_BTN_DEPOSITION_ON:
 			{
-				cam.setDepositionBool(true);
-				//std::thread deposiiiii([&]() {
-				//	deep.setIsdeposition(true);
-				//	deep.depositionFunction(pztGraphframe, info);
-				//	InvalidateRect(hWnd, NULL, TRUE);
-				//	});
-				//deposiiiii.detach();
+				camPtr->setDepositionBool(TRUE);
 			}
 			break;
 			case ID_BTN_DEPOSITION_OFF:
 			{
-				cam.setDepositionBool(false);
+				camPtr->setDepositionBool(FALSE);
 				ScreenRecord sr;
-				//sr.CaptureAndSaveScreenshot(L"C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
-				//deep.setIsdeposition(false);
+				sr.CaptureAndSaveScreenshot("C:\\Users\\nares\\Desktop\\allout\\preference.bmp");
 			}
 			break;
 			case BTN_UTH:
@@ -313,20 +274,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		PAINTSTRUCT ps;
 		HDC hdc = BeginPaint(hWnd, &ps);
-		PreferenceManager pr;
-		std::string loadedValue = pr.getprefString("frame");
-		HWND hwndPP = GetDlgItem(hWnd, ID_CAMERA_OPTION);
-		if (hwndPP != NULL) {
-			std::wstring wideLoadedValue(loadedValue.begin(), loadedValue.end());
-			std::wstring newText = L"PZTvolt: " + wideLoadedValue;
-			SetWindowTextW(hwndPP, newText.c_str());
-		}
-
 		EndPaint(hWnd, &ps);
 	}
 	break;
 
 	case WM_DESTROY:
+		if (camPtr) {
+			camPtr->setStopCamera(FALSE); // Stop the camera
+		}
         PostQuitMessage(0);
         break;
     default:

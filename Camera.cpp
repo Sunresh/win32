@@ -62,27 +62,28 @@ void Camera::pauseCamera() {
 	sqw = std::stod(pref.getprefString(SQH_KEY));
 }
 
-void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
+void Camera::DisplayCameraFrame()
 {
 	OutputDebugStringW(L"\n\n\n\naayyo\n\n\n\n\n");
-	sqw = std::stod(pref.getprefString(SQW_KEY));
-	sqh = std::stod(pref.getprefString(SQH_KEY));
-	sqx1 = std::stod(pref.getprefString(SQX1_KEY));
-	sqy1 = std::stod(pref.getprefString(SQY1_KEY));
-	time = std::stod(pref.getprefString(TIME_KEY));
-	uth = std::stod(pref.getprefString(UTH_KEY));
-	lth = std::stod(pref.getprefString(LTH_KEY));
-	epv = std::stod(pref.getprefString(EPV_KEY));
-	pztmax = std::stod(pref.getprefString(PZT_KEY));
+	
 
 	try {
+		sqw = std::stod(pref.getprefString(SQW_KEY));
+		sqh = std::stod(pref.getprefString(SQH_KEY));
+		sqx1 = std::stod(pref.getprefString(SQX1_KEY));
+		sqy1 = std::stod(pref.getprefString(SQY1_KEY));
+		time = std::stod(pref.getprefString(TIME_KEY));
+		uth = std::stod(pref.getprefString(UTH_KEY));
+		lth = std::stod(pref.getprefString(LTH_KEY));
+		epv = std::stod(pref.getprefString(EPV_KEY));
+		pztmax = std::stod(pref.getprefString(PZT_KEY));
 		cap.open(0);
 		if (!cap.isOpened()) {
 			return;
 		}
 		double stage = 0;
 		
-		const int camwidth = std::round(0.4 * GetSystemMetrics(SM_CXSCREEN));
+		const int camwidth = std::round(0.25 * GetSystemMetrics(SM_CXSCREEN));
 		const int rowheight = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN));
 		double timedelay = 0;
 		bool isComplete = FALSE;
@@ -95,35 +96,25 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 		DAQmxCreateAOVoltageChan(pztvtask, "Dev2/ao1", "ao_channel", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
 		DAQmxCfgSampClkTiming(epvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
 		DAQmxCfgSampClkTiming(pztvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
-
-
-		HDC hdc = GetDC(hWnd); // Obtain device context for the window
-		HDC hdc1 = GetDC(hWn); // Obtain device context for the window
-		cv::Mat dframe, frame;
-		while (!getstopCamera()) {
+		cv::Mat dframe, frame, tmpFrameOriginal, tmpFrameCropped, tmpcalcFrame, bbdd, ppttzz;
+		cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
+		while (getstopCamera()) {
 			cap >> dframe;
 			if (!dframe.empty()) {
-				cv::flip(dframe, frame, 1);//flip
+				cv::flip(dframe, frame, 1);
 				cv::resize(frame, frame, cv::Size(camwidth - 10, rowheight - 10));
-				// Show original frame in g_hFrame1
-				cv::Mat tmpFrameOriginal;
 				cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
-				// Show cropped portion in zoomfram
 				drawRectangle(tmpFrameOriginal, (camwidth - 10) / 3, (rowheight - 10) / 3, 2 * (camwidth - 10) / 3, 2 * (rowheight - 10) / 3, cv::Scalar(0, 0, 255), 1);
 				cv::Mat croppedFrame = frame(cv::Rect((camwidth - 10) / 3, (rowheight - 10) / 3, (camwidth - 10) / 3, (rowheight - 10) / 3));
-				cv::Mat tmpFrameCropped;
 				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
 				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(camwidth - 10, rowheight - 10));
-				// Show calfram portion in zoomfram
 				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(0, 0, 255), 1);
-				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh)); // Example crop - adjust as needed
-				cv::Mat tmpcalcFrame;
-			
+				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh));
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
-
 				setBrightness(tmpcalcFrame);
 				brightData.push_back(getBrightness());
 				bool output = pref.schmittTrigger(getBrightness(), uth, lth, false);
+
 				if (getDepositionBool()) {
 					current_filename = pref.getprefString(CURRENT_FILENAME_KEY);
 					if (!isComplete) {
@@ -173,33 +164,36 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 				DAQmxWriteAnalogF64(epvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &epv, nullptr, nullptr);
 				DAQmxWriteAnalogF64(pztvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &stage, nullptr, nullptr);
 
+				// Display the original and cropped frames combined in a single window
+				cv::Mat bd(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
+				cv::cvtColor(bd, bbdd, cv::COLOR_BGR2BGRA);
+				cv::resize(bbdd, bbdd, cv::Size(2 * tmpFrameOriginal.cols, 0.5*tmpFrameOriginal.rows));
 
-				// Display original frame in g_hFrame1
-				HBITMAP hBitmapOriginal = CreateBitmap(tmpFrameOriginal.cols, tmpFrameOriginal.rows, 1, 32, tmpFrameOriginal.data);
-				HDC memDCOriginal = CreateCompatibleDC(hdc);
-				SelectObject(memDCOriginal, hBitmapOriginal);
-				BitBlt(hdc, 0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows, memDCOriginal, 0, 0, SRCCOPY);
-				DeleteDC(memDCOriginal);
-				DeleteObject(hBitmapOriginal);
-				// Display cropped portion in zoomfram
-				HBITMAP hBitmapCropped = CreateBitmap(tmpFrameCropped.cols, tmpFrameCropped.rows, 1, 32, tmpFrameCropped.data);
-				HDC memDCCropped = CreateCompatibleDC(hdc1);
-				SelectObject(memDCCropped, hBitmapCropped);
-				BitBlt(hdc1, 0, 0, tmpFrameCropped.cols, tmpFrameCropped.rows, memDCCropped, 0, 0, SRCCOPY);
-				DeleteDC(memDCCropped);
-				DeleteObject(hBitmapCropped);
+				cv::Mat pztgraph(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
+				cv::cvtColor(pztgraph, ppttzz, cv::COLOR_BGR2BGRA);
+				cv::resize(ppttzz, ppttzz, cv::Size(2 * tmpFrameOriginal.cols, 0.5*tmpFrameOriginal.rows));
+
+				allgraph(bbdd, brightData, 160, "BD");
+				allgraph(ppttzz, pztVolt, 5, "PZT");
+
+				cv::Mat combinedFrame(tmpFrameOriginal.rows * 2, tmpFrameOriginal.cols * 2, tmpFrameOriginal.type());
+				tmpFrameOriginal.copyTo(combinedFrame(cv::Rect(0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
+				tmpFrameCropped.copyTo(combinedFrame(cv::Rect(tmpFrameOriginal.cols, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
+				bbdd.copyTo(combinedFrame(cv::Rect(0, tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
+				ppttzz.copyTo(combinedFrame(cv::Rect(0, 1.5*tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
+
+				cv::imshow("ORI", combinedFrame);
+				cv::moveWindow("ORI", -10, -10);
 			}
-			InvalidateRect(hWnd, NULL, TRUE);
-			if (cv::waitKey(1) == 'q') {
+			if (cv::waitKey(1) == 'q'|| !getstopCamera()) {
 				stopCamera = true;
+				cv::destroyWindow("ORI");
 				break;
 			}
 		}
 		DAQmxClearTask(epvtask);
 		DAQmxClearTask(pztvtask);
 		cap.release();
-		ReleaseDC(hWnd, hdc);
-		ReleaseDC(hWn, hdc1);
 	}
 	catch (const std::exception& e) {
 		// Handle exceptions and display an error message
@@ -211,3 +205,26 @@ void Camera::DisplayCameraFrame(HWND hWnd, HWND hWn)
 	}
 }
 
+void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double upperLimit, const std::string& yxix) {
+	int startPointX = 30;
+	if (graphValues.empty()) {
+		return;
+	}
+	int height = frame.rows;
+	int width = frame.cols;
+	if (graphValues.size() >= static_cast<size_t>(width - startPointX)) {
+		int elementsToSkip = graphValues.size() - (width - startPointX);
+		startPointX -= elementsToSkip;
+	}
+	cv::Point startPoint(startPointX, height * 0.5);
+	frame = cv::Scalar(255, 255, 255);
+
+	for (int i = 0; i < graphValues.size(); ++i) {
+		double y = (graphValues[i] / upperLimit) * (height * 0.8) + 10;
+		cv::Point endPoint(i + startPointX, height - static_cast<int>(y));
+		line(frame, startPoint, endPoint, cv::Scalar(0, 0, 0), 1);
+		startPoint = endPoint;
+	}
+	/*drawYAxisValues(frame, pr.uBGR(0, 0, 0), upperLimit, yxix);
+	drawXAxis(frame, pr.uBGR(0, 0, 0));*/
+}

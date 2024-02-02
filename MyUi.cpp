@@ -1,9 +1,9 @@
 #include "MyUi.h"
 
 
-HWND MyUI::CreateButton(const wchar_t* text, int x, int y, int buttonWidth, int buttonHeight, HWND parent, int id, DWORD style)
+HWND MyUI::CreateButton(const wchar_t* text, int x, int y, int btw, int bth, HWND parent, int id, DWORD style)
 {
-	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, buttonWidth, buttonHeight, parent, (HMENU)id, NULL, NULL);
+	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
 }
 
 HWND MyUI::CreateStaticText(const wchar_t* text, int x, int y, int width, int height, HWND parent, int id, DWORD style)
@@ -57,61 +57,60 @@ std::string MyUI::getTextInput(HWND hInput)
 }
 
 HWND MyUI::mainUi(HWND hWnd) {
-	const int buttonWidth = std::round(0.1 * GetSystemMetrics(SM_CXSCREEN));
-	const int camwidth = std::round(0.4 * GetSystemMetrics(SM_CXSCREEN));
-	const int buttonHeight = std::round(0.05 * GetSystemMetrics(SM_CYSCREEN));
-	const int buttonSpacing = buttonHeight + 2;
+	const int x = std::round(0.50 * GetSystemMetrics(SM_CXSCREEN));
+	const int y = std::round(0.10 * GetSystemMetrics(SM_CYSCREEN));
+	const int w = std::round(0.50 * GetSystemMetrics(SM_CXSCREEN));
+	const int h = std::round(0.85 * GetSystemMetrics(SM_CYSCREEN));
+
+	const int btw = std::round(0.1 * GetSystemMetrics(SM_CXSCREEN));
+	const int bth = std::round(0.05 * GetSystemMetrics(SM_CYSCREEN));
+	const int btspace = bth + 2;
+	const int row2 = btw + 2;
+	const int row3 = 2*btw + 4;
+
 	const int rowheight = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN));
 
-	hFrame = CreateButton(L"Menu", 1, 1, 260, GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
-	CreateButton(L"Camera ON", 2, 1, buttonWidth, buttonHeight, hFrame, ID_BTN_CAMERA_ON);
-	CreateButton(L"Camera OFF", 2, buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_CAMERA_OFF);
-	CreateButton(L"Laser ON", 2, 2 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_LASER_ON);
-	CreateButton(L"Laser OFF", 2, 3 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_LASER_OFF);
-	CreateButton(L"Deposition ON", 2, 4 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_DEPOSITION_ON);
-	CreateButton(L"Dep Pause", 2, 5 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_DEPOSITION_OFF);
-	CreateButton(L"Deposition OFF", 2, 6 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_DEPOSITION_OFF);
-	hCombo = CreateButton(L"30", 2, 7 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_CAMERA_OPTION);
-	CreateButton(L"EPV0", 2, 8 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_EPDV0);
-	CreateButton(L"PZTV0", 2, 9 * buttonSpacing, buttonWidth, buttonHeight, hFrame, ID_BTN_PZTV0);
+	hFrame = CreateButton(L"Menu", 0, 0, w, h, hWnd, NULL, BS_GROUPBOX);
+	CreateButton(L"Camera ON", 0, 0, btw, bth, hFrame, ID_BTN_CAMERA_ON);
+	CreateButton(L"Camera OFF", 0, btspace, btw, bth, hFrame, ID_BTN_CAMERA_OFF);
+	CreateButton(L"Laser ON", 0, 2 * btspace, btw, bth, hFrame, ID_BTN_LASER_ON);
+	CreateButton(L"Laser OFF", 0, 3 * btspace, btw, bth, hFrame, ID_BTN_LASER_OFF);
+	CreateButton(L"Deposition ON", 0, 4 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_ON);
+	CreateButton(L"Dep Pause", 0, 5 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
+	CreateButton(L"Deposition OFF", 0, 6 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
+	hCombo = CreateButton(L"30", 0, 7 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
+	CreateButton(L"EPV0", 0, 8 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
+	CreateButton(L"PZTV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
 
-	txtBD = CreateStaticText(L"Brightness: ", 2, 10 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_STATIC_HEIGHT);
+	txtBD = CreateStaticText(L"Brightness: ", row2, 0 * btspace, btw, bth, hFrame, IDC_STATIC_HEIGHT);
 	loadPref(txtBD,"txtBD");
-	txtEVOLT = CreateStaticText(L"E.Volt:", 2, 11 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	txtEVOLT = CreateStaticText(L"E.Volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtEVOLT, "txtBD");
-	txtPZT = CreateStaticText(L"PZT volt:", 2, 12 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	txtPZT = CreateStaticText(L"PZT volt:", row2, 2 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtPZT, "PZT");
-	txtTIME = CreateStaticText(L"Dep. Time(s)", 2, 13 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	txtTIME = CreateStaticText(L"Dep. Time(s)", row2, 3 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtTIME, "TIME");
-	txtUTH = CreateStaticText(L"Upper Th.:", 2, 14 * buttonSpacing, buttonWidth, buttonHeight, hFrame, NULL);
+	txtUTH = CreateStaticText(L"Upper Th.:", row2, 4 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtUTH, "LowerLH");
-	txtLTH = CreateStaticText(L"Lower Th.:", 2, 15 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_YOUR_LOWER_TH_STATIC_ID);
+	txtLTH = CreateStaticText(L"Lower Th.:", row2, 5 * btspace, btw, bth, hFrame, IDC_YOUR_LOWER_TH_STATIC_ID);
 	loadPref(txtLTH, "LowerLH");
-	//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * buttonSpacing, buttonWidth, buttonHeight, hFrame, IDC_PPZZ);
-
-	g_hFrame1 = CreateButton(L"Camera", buttonWidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
-	zoomfram = CreateButton(L"ZOOM", buttonWidth + camwidth, 2, camwidth, rowheight, hWnd, NULL, BS_GROUPBOX);
-
-	graphframe = CreateButton(L"Graph", buttonWidth, rowheight, 2 * camwidth, 0.25 * GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
-	pztGraphframe = CreateButton(L"Graph", buttonWidth, 0.25 * GetSystemMetrics(SM_CYSCREEN) + rowheight, 2 * camwidth, 0.15 * GetSystemMetrics(SM_CYSCREEN), hWnd, NULL, BS_GROUPBOX);
-
-	// Assume MyUI is an instance of your UI class
-	CreateSlider(buttonWidth+2* camwidth, 1, buttonWidth, 3*buttonHeight, hWnd, IDC_SLIDER, TBS_AUTOTICKS | TBS_ENABLESELRANGE);
-	btnUth = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 3 * buttonHeight, buttonWidth, buttonHeight, L"Save Uth", hWnd, INPUT_UTH, BTN_UTH, NULL);
+	//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * btspace, btw, bth, hFrame, IDC_PPZZ);
+	
+	btnUth = InputSaveButton(L"0", row3, 0 * btspace, btw, bth, L"Save Uth", hWnd, INPUT_UTH, BTN_UTH, NULL);
 	loadPrefv(btnUth, "UpperTH");
-	btnLth = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 4 * buttonHeight, buttonWidth, buttonHeight, L"Save Lth", hWnd, INPUT_LTH, BTN_LTH, NULL);
+	btnLth = InputSaveButton(L"0", row3, 1 * btspace, btw, bth, L"Save Lth", hWnd, INPUT_LTH, BTN_LTH, NULL);
 	loadPrefv(btnLth, "LowerTH");
-	btnPZT = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 5 * buttonHeight, buttonWidth, buttonHeight, L"Save PZT", hWnd, INPUT_PZT, BTN_PZT, NULL);
+	btnPZT = InputSaveButton(L"0", row3, 2 * btspace, btw, bth, L"Save PZT", hWnd, INPUT_PZT, BTN_PZT, NULL);
 	loadPrefv(btnPZT, "PZT");
-	btnSQH = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 6 * buttonHeight, buttonWidth, buttonHeight, L"Save SH", hWnd, INPUT_SQH, BTN_SQH, NULL);
+	btnSQH = InputSaveButton(L"0", row3, 3 * btspace, btw, bth, L"Save SH", hWnd, INPUT_SQH, BTN_SQH, NULL);
 	loadPrefv(btnSQH, "SQH");
-	btnSQW = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 7 * buttonHeight, buttonWidth, buttonHeight, L"Save SW", hWnd, INPUT_SQW, BTN_SQW, NULL);
+	btnSQW = InputSaveButton(L"0", row3, 4 * btspace, btw, bth, L"Save SW", hWnd, INPUT_SQW, BTN_SQW, NULL);
 	loadPrefv(btnSQW, "SQW");
-	btnSQX = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 8 * buttonHeight, buttonWidth, buttonHeight, L"Save SX", hWnd, INPUT_SQX, BTN_SQX, NULL);
+	btnSQX = InputSaveButton(L"0", row3, 5 * btspace, btw, bth, L"Save SX", hWnd, INPUT_SQX, BTN_SQX, NULL);
 	loadPrefv(btnSQX, "SQX");
-	btnSQY = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 9 * buttonHeight, buttonWidth, buttonHeight, L"Save SY", hWnd, INPUT_SQY, BTN_SQY, NULL);
+	btnSQY = InputSaveButton(L"0", row3, 6 * btspace, btw, bth, L"Save SY", hWnd, INPUT_SQY, BTN_SQY, NULL);
 	loadPrefv(btnSQY, "SQY");
-	btnTIME = InputSaveButton(L"0", buttonWidth + 2 * camwidth, 10 * buttonHeight, buttonWidth, buttonHeight, L"Save Time", hWnd, INPUT_TIME, BTN_TIME, NULL);
+	btnTIME = InputSaveButton(L"0", row3, 7 * btspace, btw, bth, L"Save Time", hWnd, INPUT_TIME, BTN_TIME, NULL);
 	loadPrefv(btnTIME, "TIME");
 
 	//check folder and create if not allout\20240305 folder inside folder
@@ -154,19 +153,6 @@ void MyUI::loadPrefv(HWND hwnd, std::string key) {
 	SetWindowTextW(hwnd, newText.c_str());
 }
 
-
-HWND MyUI::GetCamHandle() const {
-	return g_hFrame1;
-}
-HWND MyUI::GetZoomCamHandle() const {
-	return zoomfram;
-}
-HWND MyUI::GetBDgraphHandle() const {
-	return graphframe;
-}
-HWND MyUI::GetPZTgraphHandle() const {
-	return pztGraphframe;
-}
 
 HWND MyUI::getTxtBD() const {
 	return txtBD;
@@ -374,53 +360,6 @@ INT_PTR CALLBACK MyUI::About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPar
 	return (INT_PTR)FALSE;
 }
 
-HWND MyUI::CreateSlider(int x, int y, int width, int height, HWND parent, int id, DWORD style)
-{
-	InitCommonControls();
-
-	// Create the slider control
-	HWND slider = CreateWindowW(L"msctls_trackbar32", L"", WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
-
-	// Create a static text control for the label
-	CreateWindowW(L"STATIC", L"Slider Value:", WS_VISIBLE | WS_CHILD, x, y+ height, 100, 20, parent, NULL, NULL, NULL);
-
-	// Create a static text control to display the current value
-	HWND valueLabel = CreateWindowW(L"STATIC", L"0", WS_VISIBLE | WS_CHILD, x + width + 10, y, 50, 20, parent, NULL, NULL, NULL);
-
-	// Set the value label as user data of the slider control
-	SetWindowLongPtr(slider, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(valueLabel));
-
-	// Set the initial position for the value label
-	SetWindowTextW(valueLabel, L"0");
-
-	// Set up a notification handler for the slider
-	SendMessage(slider, TBM_SETBUDDY, static_cast<WPARAM>(TRUE), reinterpret_cast<LPARAM>(valueLabel));
-	SendMessage(slider, TBM_SETRANGE, static_cast<WPARAM>(TRUE), MAKELONG(0, 10));  // Set the range from 0 to 10
-	SendMessage(slider, TBM_SETTICFREQ, 1, 0);
-	// Add a message handler for WM_HSCROLL to update the value label
-	SetWindowSubclass(slider, SliderWndProc, 0, 0);
-	return slider;
-}
-
-LRESULT CALLBACK MyUI::SliderWndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
-{
-
-	if (uMsg == WM_HSCROLL)
-	{
-		HWND valueLabel = reinterpret_cast<HWND>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
-
-		// Get the current position of the slider
-		int currentPosition = SendMessage(hwnd, TBM_GETPOS, 0, 0);
-
-		// Convert the position to a string and update the value label
-		wchar_t valueText[10];
-		swprintf(valueText, L"%d", currentPosition);
-		SetWindowTextW(valueLabel, valueText);
-		OutputDebugStringW(L"\n\nSliderWndProc called\n\n");
-	}
-
-	return DefSubclassProc(hwnd, uMsg, wParam, lParam);
-}
 
 void MyUI::mess(const wchar_t* text) {
 	MessageBoxW(NULL, text, L"Message", MB_OK | MB_ICONINFORMATION);
