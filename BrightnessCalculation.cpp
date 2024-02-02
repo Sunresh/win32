@@ -296,15 +296,69 @@ double BrightnessClass::differencesOf(cv::Mat& iframe) {
 			f2 = f1.clone();
 			f1 = grayFrame.clone();
 		}
-		double Pij = 0.0;
+		double Sij = 0.0;
+
 		if (!f1.empty() && !f20.empty()) {
 			for (int y = 0; y < height; ++y) {
 				for (int x = 0; x < width; ++x) {
+					uchar* r1 = f1.ptr<uchar>(y, x);
+					uchar* r2 = f2.ptr<uchar>(y, x);
+					uchar* r3 = f3.ptr<uchar>(y, x);
+					uchar* r4 = f4.ptr<uchar>(y, x);
+					uchar* r5 = f5.ptr<uchar>(y, x);
+					uchar* r6 = f6.ptr<uchar>(y, x);
+					uchar* r7 = f7.ptr<uchar>(y, x);
+					uchar* r8 = f8.ptr<uchar>(y, x);
+					uchar* r9 = f9.ptr<uchar>(y, x);
+					uchar* r10 = f10.ptr<uchar>(y, x);
+					uchar* r11 = f11.ptr<uchar>(y, x);
+					uchar* r12 = f12.ptr<uchar>(y, x);
+					uchar* r13 = f13.ptr<uchar>(y, x);
+					uchar* r14 = f14.ptr<uchar>(y, x);
+					uchar* r15 = f15.ptr<uchar>(y, x);
+					uchar* r16 = f16.ptr<uchar>(y, x);
+					uchar* r17 = f17.ptr<uchar>(y, x);
+					uchar* r18 = f18.ptr<uchar>(y, x);
+					uchar* r19 = f19.ptr<uchar>(y, x);
+					double n1 = static_cast<int>(*r1);
+					double n2 = static_cast<int>(*r2);
+					double n3 = static_cast<int>(*r3);
+					double n4 = static_cast<int>(*r4);
+					double n5 = static_cast<int>(*r5);
+					double n6 = static_cast<int>(*r6);
+					double n7 = static_cast<int>(*r7);
+					double n8 = static_cast<int>(*r8);
+					double n9 = static_cast<int>(*r9);
+					double n10 = static_cast<int>(*r10);
+					double n11 = static_cast<int>(*r11);
+					double n12 = static_cast<int>(*r12);
+					double n13 = static_cast<int>(*r13);
+					double n14 = static_cast<int>(*r14);
+					double n15 = static_cast<int>(*r15);
+					double n16 = static_cast<int>(*r16);
+					double n17 = static_cast<int>(*r17);
+					double n18 = static_cast<int>(*r18);
+					double n19 = static_cast<int>(*r19);
 
-
-
-
-					Pij = abs(f1.at<uchar>(y, x) - f2.at<uchar>(y, x)) +
+					Sij = abs(n1 - n2) + 
+						abs(n2 - n3) + 
+						abs(n3 - n4) + 
+						abs(n4 - n5) + 
+						abs(n5 - n6) + 
+						abs(n6 - n7) +
+						abs(n7 - n8) +
+						abs(n8 - n9) +
+						abs(n9 - n10) +
+						abs(n10 - n11) +
+						abs(n11 - n12) +
+						abs(n12 - n13) +
+						abs(n13 - n14) +
+						abs(n14 - n15) +
+						abs(n15 - n16) +
+						abs(n16 - n17) +
+						abs(n17 - n18) +
+						abs(n18 - n19);
+					/*Pij = abs(f1.at<uchar>(y, x) - f2.at<uchar>(y, x)) +
 						abs(f2.at<uchar>(y, x) - f3.at<uchar>(y, x)) +
 						abs(f3.at<uchar>(y, x) - f4.at<uchar>(y, x)) +
 						abs(f4.at<uchar>(y, x) - f5.at<uchar>(y, x)) +
@@ -322,7 +376,7 @@ double BrightnessClass::differencesOf(cv::Mat& iframe) {
 						abs(f16.at<uchar>(y, x) - f17.at<uchar>(y, x)) +
 						abs(f17.at<uchar>(y, x) - f18.at<uchar>(y, x)) +
 						abs(f18.at<uchar>(y, x) - f19.at<uchar>(y, x)) +
-						abs(f19.at<uchar>(y, x) - f20.at<uchar>(y, x));
+						abs(f19.at<uchar>(y, x) - f20.at<uchar>(y, x));*/
 
 				}
 			}
@@ -330,7 +384,8 @@ double BrightnessClass::differencesOf(cv::Mat& iframe) {
 		else {
 			return 0.0;
 		}
-		return Pij;
+		
+		return Sij;
 	}
 	catch (const std::exception& e) {
 		// Handle exceptions and display an error message

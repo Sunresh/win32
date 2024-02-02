@@ -11,10 +11,17 @@ HWND MyUI::CreateStaticText(const wchar_t* text, int x, int y, int width, int he
 	return CreateWindowW(L"STATIC", text, WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
 }
 
-HWND MyUI::InputSaveButton(const wchar_t* inputText, int x, int y, int w, int h, const wchar_t* buttonText, HWND parent, int inputId, int buttonId, DWORD inputStyle, DWORD buttonStyle)
+HWND MyUI::InputSaveButton(const wchar_t* inputText, int x, int y, int w, int h, const wchar_t* buttonText, HWND parent, int inputId, int buttonId, DWORD inputStyle, DWORD buttonStyle,int ratio)
 {
-	HWND hInput = CreateWindowW(L"EDIT", inputText, WS_VISIBLE | WS_CHILD | inputStyle,x, y, w/2, h, parent, (HMENU)inputId, NULL, NULL);
-	HWND hButton = CreateWindowW(L"BUTTON", buttonText, WS_VISIBLE | WS_CHILD | buttonStyle,x+w/2, y, w/2, h, parent, (HMENU)buttonId, NULL, NULL);
+	HWND hInput;
+	if (ratio == 50) {
+		hInput = CreateWindowW(L"EDIT", inputText, WS_VISIBLE | WS_CHILD | inputStyle, x, y, w / 2, h, parent, (HMENU)inputId, NULL, NULL);
+		HWND hButton = CreateWindowW(L"BUTTON", buttonText, WS_VISIBLE | WS_CHILD | buttonStyle, x + w / 2, y, w / 2, h, parent, (HMENU)buttonId, NULL, NULL);
+	}
+	else {
+		hInput = CreateWindowW(L"EDIT", inputText, WS_VISIBLE | WS_CHILD | inputStyle, x, y, w*0.75, h, parent, (HMENU)inputId, NULL, NULL);
+		HWND hButton = CreateWindowW(L"BUTTON", buttonText, WS_VISIBLE | WS_CHILD | buttonStyle, x + w*0.75, y, w *0.25, h, parent, (HMENU)buttonId, NULL, NULL);
+	}
 	return hInput;
 }
 
@@ -79,39 +86,42 @@ HWND MyUI::mainUi(HWND hWnd) {
 	CreateButton(L"Dep Pause", 0, 5 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
 	CreateButton(L"Deposition OFF", 0, 6 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
 	hCombo = CreateButton(L"30", 0, 7 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
-	CreateButton(L"EPV0", 0, 8 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
-	CreateButton(L"PZTV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
+	CreateButton(L"EPV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
+	CreateButton(L"PZTV0", 0, 10 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
 
 	txtBD = CreateStaticText(L"Brightness: ", row2, 0 * btspace, btw, bth, hFrame, IDC_STATIC_HEIGHT);
 	loadPref(txtBD,"txtBD");
 	txtEVOLT = CreateStaticText(L"E.Volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
-	loadPref(txtEVOLT, "txtBD");
+	loadPref(txtEVOLT, EPV_KEY);
 	txtPZT = CreateStaticText(L"PZT volt:", row2, 2 * btspace, btw, bth, hFrame, NULL);
-	loadPref(txtPZT, "PZT");
+	loadPref(txtPZT, PZT_KEY);
 	txtTIME = CreateStaticText(L"Dep. Time(s)", row2, 3 * btspace, btw, bth, hFrame, NULL);
-	loadPref(txtTIME, "TIME");
+	loadPref(txtTIME, TIME_KEY);
 	txtUTH = CreateStaticText(L"Upper Th.:", row2, 4 * btspace, btw, bth, hFrame, NULL);
-	loadPref(txtUTH, "LowerLH");
+	loadPref(txtUTH, UTH_KEY);
 	txtLTH = CreateStaticText(L"Lower Th.:", row2, 5 * btspace, btw, bth, hFrame, IDC_YOUR_LOWER_TH_STATIC_ID);
-	loadPref(txtLTH, "LowerLH");
+	loadPref(txtLTH, LTH_KEY);
+
 	//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * btspace, btw, bth, hFrame, IDC_PPZZ);
 	
-	btnUth = InputSaveButton(L"0", row3, 0 * btspace, btw, bth, L"Save Uth", hWnd, INPUT_UTH, BTN_UTH, NULL);
-	loadPrefv(btnUth, "UpperTH");
-	btnLth = InputSaveButton(L"0", row3, 1 * btspace, btw, bth, L"Save Lth", hWnd, INPUT_LTH, BTN_LTH, NULL);
-	loadPrefv(btnLth, "LowerTH");
-	btnPZT = InputSaveButton(L"0", row3, 2 * btspace, btw, bth, L"Save PZT", hWnd, INPUT_PZT, BTN_PZT, NULL);
-	loadPrefv(btnPZT, "PZT");
-	btnSQH = InputSaveButton(L"0", row3, 3 * btspace, btw, bth, L"Save SH", hWnd, INPUT_SQH, BTN_SQH, NULL);
-	loadPrefv(btnSQH, "SQH");
-	btnSQW = InputSaveButton(L"0", row3, 4 * btspace, btw, bth, L"Save SW", hWnd, INPUT_SQW, BTN_SQW, NULL);
-	loadPrefv(btnSQW, "SQW");
-	btnSQX = InputSaveButton(L"0", row3, 5 * btspace, btw, bth, L"Save SX", hWnd, INPUT_SQX, BTN_SQX, NULL);
-	loadPrefv(btnSQX, "SQX");
-	btnSQY = InputSaveButton(L"0", row3, 6 * btspace, btw, bth, L"Save SY", hWnd, INPUT_SQY, BTN_SQY, NULL);
-	loadPrefv(btnSQY, "SQY");
-	btnTIME = InputSaveButton(L"0", row3, 7 * btspace, btw, bth, L"Save Time", hWnd, INPUT_TIME, BTN_TIME, NULL);
-	loadPrefv(btnTIME, "TIME");
+	btnUth = InputSaveButton(L"0", row3, 0 * btspace, btw, bth, L"Uth", hFrame, INPUT_UTH, BTN_UTH, NULL);
+	loadPrefv(btnUth, UTH_KEY);
+	btnLth = InputSaveButton(L"0", row3, 1 * btspace, btw, bth, L"Lth", hFrame, INPUT_LTH, BTN_LTH, NULL);
+	loadPrefv(btnLth, LTH_KEY);
+	btnPZT = InputSaveButton(L"0", row3, 2 * btspace, btw, bth, L"PZT", hFrame, INPUT_PZT, BTN_PZT, NULL);
+	loadPrefv(btnPZT, PZT_KEY);
+	btnSQH = InputSaveButton(L"0", row3, 3 * btspace, btw, bth, L"SH", hFrame, INPUT_SQH, BTN_SQH, NULL);
+	loadPrefv(btnSQH, SQH_KEY);
+	btnSQW = InputSaveButton(L"0", row3, 4 * btspace, btw, bth, L"SW", hFrame, INPUT_SQW, BTN_SQW, NULL);
+	loadPrefv(btnSQW, SQW_KEY);
+	btnSQX = InputSaveButton(L"0", row3, 5 * btspace, btw, bth, L"SX", hFrame, INPUT_SQX, BTN_SQX, NULL);
+	loadPrefv(btnSQX, SQX1_KEY);
+	btnSQY = InputSaveButton(L"0", row3, 6 * btspace, btw, bth, L"SY", hFrame, INPUT_SQY, BTN_SQY, NULL);
+	loadPrefv(btnSQY, SQY1_KEY);
+	btnTIME = InputSaveButton(L"0", row3, 7 * btspace, btw, bth, L"Time", hFrame, INPUT_TIME, BTN_TIME, NULL);
+	loadPrefv(btnTIME, TIME_KEY);
+	btnCAMINDEX = InputSaveButton(L"0", 0, 8 * btspace, 4* btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON,90);
+	loadPrefv(btnCAMINDEX, CameraIndex);
 
 	//check folder and create if not allout\20240305 folder inside folder
 	std::string folderName = "allout";
@@ -146,9 +156,8 @@ std::string MyUI::yymmdd_hhmmss() {
 
 void MyUI::loadPref(HWND hwnd, std::string key) {
 	PreferenceManager pref;
-	std::string value = pref.getprefString(key);
 	std::stringstream newTextStream;
-	newTextStream << key << ":" << value;
+	newTextStream << key << ":" << pref.getprefString(key);
 	std::string text = newTextStream.str();
 	std::wstring newText(text.begin(), text.end());
 	SetWindowTextW(hwnd, newText.c_str());

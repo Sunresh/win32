@@ -43,6 +43,42 @@ double Camera::meanofBri(cv::Mat& iframe) {
 std::deque<double>& Camera::GetPZTvolt() {
 	return pztVolt;
 }
+void Camera::cameraIndex() {
+	PreferenceManager pref; // Assuming you have access to PreferenceManager
+
+	std::string indexString = pref.getprefString(CameraIndex);
+
+
+	std::string result;
+	for (char c : indexString) {
+		if (c == '\\') {
+			result += "\\\\";
+		}
+		else if (c != '"') {
+			result += c;
+		}
+	}
+
+	if (indexString == "0") {
+		cameraid = 0;
+		filepath = result; // No filepath when camera index is 0
+	}
+	else if (indexString == "1") {
+		cameraid = 1;
+		filepath = result; // No filepath when camera index is 1
+	}
+	else {
+		cameraid = -1; // Indicate invalid camera index
+		filepath = result; // Set the filepath
+	}
+}
+int Camera::getCameraId() const {
+	return cameraid;
+}
+
+std::string Camera::getFilePath() const {
+	return filepath;
+}
 std::deque<double>& Camera::GetBrightData() {
 	return brightData;
 }
@@ -72,13 +108,13 @@ void Camera::DisplayCameraFrame()
 		sqh = std::stod(pref.getprefString(SQH_KEY));
 		sqx1 = std::stod(pref.getprefString(SQX1_KEY));
 		sqy1 = std::stod(pref.getprefString(SQY1_KEY));
-		time = std::stod(pref.getprefString(TIME_KEY));
-		uth = std::stod(pref.getprefString(UTH_KEY));
-		lth = std::stod(pref.getprefString(LTH_KEY));
-		pztmax = std::stod(pref.getprefString(PZT_KEY));
-		cap.open(0);
-
-		//cap.open("C:\\Users\\nares\\Desktop\\LAB\\movie\\close\\one.mp4");
+		cameraIndex();
+		if (getCameraId() !=-1) {
+			cap.open(getCameraId());
+		}
+		else {
+			cap.open(getFilePath());
+		}
 		if (!cap.isOpened()) {
 			return;
 		}
@@ -100,15 +136,24 @@ void Camera::DisplayCameraFrame()
 		cv::Mat dframe, frame, tmpFrameOriginal, tmpFrameCropped, tmpcalcFrame, bbdd, ppttzz;
 		cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
 		while (getstopCamera()) {
+			uth = std::stod(pref.getprefString(UTH_KEY));
+			lth = std::stod(pref.getprefString(LTH_KEY));
+			pztmax = std::stod(pref.getprefString(PZT_KEY));
+			cameraIndex();
+			time = std::stod(pref.getprefString(TIME_KEY));
 			cap >> dframe;
 			if (!dframe.empty()) {
 				cv::flip(dframe, frame, 1);
 				cv::resize(frame, frame, cv::Size(camwidth - 10, rowheight - 10));
 				cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
-				drawRectangle(tmpFrameOriginal, (camwidth - 10) / 3, (rowheight - 10) / 3, 2 * (camwidth - 10) / 3, 2 * (rowheight - 10) / 3, cv::Scalar(0, 0, 255), 1);
-				cv::Mat croppedFrame = frame(cv::Rect((camwidth - 10) / 3, (rowheight - 10) / 3, (camwidth - 10) / 3, (rowheight - 10) / 3));
+
+				drawRectangle(tmpFrameOriginal,0, 20,125, 185 , cv::Scalar(0, 0, 255), 1);
+				cv::Mat croppedFrame = frame(cv::Rect(0, 20, 125, 165));
+
 				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
 				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(camwidth - 10, rowheight - 10));
+
+
 				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(0, 0, 255), 1);
 				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh));
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
@@ -225,7 +270,8 @@ void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double up
 	}
 	cv::Point startPoint(startPointX, height * 0.5);
 	frame = cv::Scalar(255, 255, 255);
-
+	line(frame, cv::Point(10, 10), cv::Point(width * 0.9, 10), cv::Scalar(0, 255, 0), 1);
+	line(frame, cv::Point(10, height - 10), cv::Point(width * 0.9, height - 10), cv::Scalar(0, 0, 255), 1);
 	for (int i = 0; i < graphValues.size(); ++i) {
 		double y = (graphValues[i] / upperLimit) * (height * 0.8) + 10;
 		cv::Point endPoint(i + startPointX, height - static_cast<int>(y));

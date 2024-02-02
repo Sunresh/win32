@@ -45,7 +45,8 @@ public:
 	bool getstopCamera();
 	void setSQW(double stop);
 	void Camera::pauseCamera();
-
+	int cameraid = 0;
+	std::string filepath;
 	void setDepositionBool(bool stop);
 	bool getDepositionBool();
 	void start();
@@ -63,6 +64,11 @@ public:
 	bool Camera::getCaptureScreenBool();
 	std::string current_filename ="ExampleND";
 	void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double upperLimit, const std::string& yxix);
+	void Camera::cameraIndex();
+	
+	int Camera::getCameraId() const;
+	std::string Camera::getFilePath() const;
+
 };
 
 
