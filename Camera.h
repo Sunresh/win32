@@ -20,7 +20,7 @@ public:
 	cv::VideoCapture cap;
 	int getId;
 	bool stopCamera = true;
-	std::deque<double> brightData, pztVolt;
+	std::deque<double> brightData, pztVolt,sdofbright;
 	double brightness = 0;
 	bool startDepo = false;
 	TaskHandle epvtask = nullptr;
@@ -29,6 +29,10 @@ public:
 	double sqh = 15;
 	double sqx1 = 15;
 	double sqy1 = 15;
+	double msqx1 = 0;
+	double msqy1 = 0;
+	double msqx2 = 100;
+	double msqy2 = 100;
 	double time = 15;
 	double uth = 15;
 	double lth = 15;
@@ -69,7 +73,7 @@ public:
 	static void Camera::mouse_callback(int event, int x, int y, int flags, void* param);
 	int Camera::getCameraId() const;
 	std::string Camera::getFilePath() const;
-
+	double Camera::stdev(std::deque<double> pixData);
 };
 
 

@@ -6,6 +6,15 @@ HWND MyUI::CreateButton(const wchar_t* text, int x, int y, int btw, int bth, HWN
 	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
 }
 
+HWND MyUI::CtBtn(const wchar_t* text, int x, int y, int btw, int bth, HWND parent, int id)
+{
+	// Use BS_AUTOCHECKBOX style for toggle button
+	HWND hwndToggleButton = CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
+	SendMessage(hwndToggleButton, BM_SETCHECK, isAutograph ? BST_CHECKED : BST_UNCHECKED, 0);
+	return hwndToggleButton;
+}
+
+
 HWND MyUI::CreateStaticText(const wchar_t* text, int x, int y, int width, int height, HWND parent, int id, DWORD style)
 {
 	return CreateWindowW(L"STATIC", text, WS_VISIBLE | WS_CHILD | style, x, y, width, height, parent, (HMENU)id, NULL, NULL);
@@ -89,18 +98,28 @@ HWND MyUI::mainUi(HWND hWnd) {
 	CreateButton(L"EPV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
 	CreateButton(L"PZTV0", 0, 10 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
 
-	txtBD = CreateStaticText(L"Brightness: ", row2, 0 * btspace, btw, bth, hFrame, IDC_STATIC_HEIGHT);
-	loadPref(txtBD,"txtBD");
-	txtEVOLT = CreateStaticText(L"E.Volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
+	txtEVOLT = CreateStaticText(L"E.Volt:", row2, 0 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtEVOLT, EPV_KEY);
-	txtPZT = CreateStaticText(L"PZT volt:", row2, 2 * btspace, btw, bth, hFrame, NULL);
+	txtPZT = CreateStaticText(L"PZT volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtPZT, PZT_KEY);
-	txtTIME = CreateStaticText(L"Dep. Time(s)", row2, 3 * btspace, btw, bth, hFrame, NULL);
-	loadPref(txtTIME, TIME_KEY);
-	txtUTH = CreateStaticText(L"Upper Th.:", row2, 4 * btspace, btw, bth, hFrame, NULL);
-	loadPref(txtUTH, UTH_KEY);
-	txtLTH = CreateStaticText(L"Lower Th.:", row2, 5 * btspace, btw, bth, hFrame, IDC_YOUR_LOWER_TH_STATIC_ID);
-	loadPref(txtLTH, LTH_KEY);
+	boolgraph = CtBtn(L"Auto-Graph",row2,2*btspace,btw,bth,hFrame, TGL_BTN_GRAPH);
+	if (boolgraph != NULL) {
+		isAutograph = SendMessage(boolgraph, BM_GETCHECK, 0, 0);
+		if (pref->getprefString(AUTOGRAPH_KEY)== "on") {
+			SendMessage(boolgraph, BM_SETCHECK, BST_CHECKED, 0);
+		}
+		else {
+			SendMessage(boolgraph, BM_SETCHECK, BST_UNCHECKED, 0);
+		}
+	}
+	btnMSQX1 = InputSaveButton(L"0", row2, 3 * btspace, btw, bth, L"MSQX1", hFrame, INPUT_MSQX1, BTN_MSQX1, NULL);
+	loadPrefv(btnMSQX1, MSQX1_KEY);
+	btnMSQY1 = InputSaveButton(L"0", row2, 4 * btspace, btw, bth, L"MSQY1", hFrame, INPUT_MSQY1, BTN_MSQY1, NULL);
+	loadPrefv(btnMSQY1, MSQY1_KEY);
+	btnMSQX2 = InputSaveButton(L"0", row2, 5 * btspace, btw, bth, L"MSQX2", hFrame, INPUT_MSQX2, BTN_MSQX2, NULL);
+	loadPrefv(btnMSQX2, MSQX2_KEY);
+	btnMSQY2 = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"MSQY2", hFrame, INPUT_MSQY2, BTN_MSQY2, NULL);
+	loadPrefv(btnMSQY2, MSQY2_KEY);
 
 	//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * btspace, btw, bth, hFrame, IDC_PPZZ);
 	

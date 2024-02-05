@@ -46,6 +46,15 @@
 #define BTN_SQY			1029
 #define INPUT_TIME		1030
 #define BTN_TIME		1031
+#define INPUT_MSQX1		1032
+#define BTN_MSQX1		1033
+#define INPUT_MSQY1		1034
+#define BTN_MSQY1		1035
+#define INPUT_MSQX2		1036
+#define BTN_MSQX2		1037
+#define INPUT_MSQY2		1038
+#define BTN_MSQY2		1039
+#define TGL_BTN_GRAPH	1040
 
 //setting ids
 
@@ -83,6 +92,11 @@
 #define SQH_KEY "SquareHeight"
 #define SQX1_KEY "Squareoriginx1"
 #define SQY1_KEY "Squareoriginy1"
+#define MSQX1_KEY "MainSquareoriginx1"
+#define MSQY1_KEY "MainSquareoriginy1"
+#define MSQX2_KEY "MainSquareEndx2"
+#define MSQY2_KEY "MainSquareEndy2"
+#define AUTOGRAPH_KEY "AutoGraphkey"
 #define CURRENT_FILENAME_KEY "Thisisfilename"
 #define CURRENT_DAY_KEY "TodaysDate"
 #define CURRENT_FOLDER "MYfolder"
@@ -97,11 +111,10 @@
 #define IDC_STATIC_HEIGHT 134
 #define ID_BTN_DEPOSITION_ON 135
 #define ID_BTN_DEPOSITION_OFF 136
-#define IDC_YOUR_LOWER_TH_STATIC_ID 137
-#define ID_CAMERA_OPTION 138
-#define ID_BTN_EPDV0 139
-#define ID_BTN_PZTV0 140 
-#define IDC_PPZZ 141
+#define ID_CAMERA_OPTION 137
+#define ID_BTN_EPDV0 138
+#define ID_BTN_PZTV0 139 
+#define IDC_PPZZ 140
 
 
 #define IDC_MYICON				2

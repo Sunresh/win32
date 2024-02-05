@@ -252,14 +252,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				pushh(INPUT_SQY, SQY1_KEY);
 			}
 			break;
+			case BTN_MSQX1:
+			{
+				pushh(INPUT_MSQX1, MSQX1_KEY);
+			}
+			break;
+			case BTN_MSQY1:
+			{
+				pushh(INPUT_MSQY1, MSQY1_KEY);
+			}
+			break;
+			case BTN_MSQX2:
+			{
+				pushh(INPUT_MSQX2, MSQX2_KEY);
+			}
+			break;
+			case BTN_MSQY2:
+			{
+				pushh(INPUT_MSQY2, MSQY2_KEY);
+			}
+			break;
 			case BTN_TIME:
 			{
 				pushh(INPUT_TIME, TIME_KEY);
 			}
 			break;
+			
 			case CAM_INDEX_BTN:
 			{
 				pushh(CAM_INDEX_INPUT, CameraIndex);
+			}
+			break;
+			case TGL_BTN_GRAPH:
+			{
+				(pref.getprefString(AUTOGRAPH_KEY)=="on")? pref.SetPreference(AUTOGRAPH_KEY,"off") : pref.SetPreference(AUTOGRAPH_KEY, "on");
 			}
 			break;
 

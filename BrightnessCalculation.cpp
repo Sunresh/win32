@@ -714,7 +714,9 @@ double BrightnessClass::differencesOf(cv::Mat& iframe) {
 		double n[length] = { n1, n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,n18,n19,n20,n21,n22,n23,n24,n25,n26,n27,n28, n29};
 		double sf[length] = { sf1, sf2,sf3,sf4,sf5,sf6,sf7,sf8,sf9,sf10,sf11,sf12,sf13,sf14,sf15,sf16,sf17,sf18,sf19,sf20,sf21,sf22,sf23,sf24,sf25,sf26,sf27,sf28, sf29 };
 
-		double result = average(n, sf, length,height,width);
+		double result = calculateSij(n, sf, length);
+		//double result = sumofDif(n, sf, length);
+		//double result = average(n, sf, length, height, width);
 		return result;
 	}
 	catch (const std::exception& e) {
@@ -727,35 +729,32 @@ double BrightnessClass::differencesOf(cv::Mat& iframe) {
 
 
 double BrightnessClass::calculateSij(const double* n, const double* sf, int length) {
+	setUpperlimit(30);
 	double result = 0; // Consider the first term
 	for (int i = 0; i < length - 1; ++i) {
 		result += std::abs((n[i] / sf[i]) - (n[i + 1] / sf[i + 1]));
 	}
-	return result;
+	return 100000*result;
 }
 double BrightnessClass::sumofDif(const double* n, const double* sf, int length) {
+	setUpperlimit(362);
 	double result = 0; // Consider the first term
 	for (int i = 0; i < length - 1; ++i) {
 		result += std::abs(n[i] - n[i + 1]);
 	}
 	return result;
 }
+
 double BrightnessClass::average(const double* n, const double* sf, int length,int h, int w) {
-	setUpperlimit(16);
+	setUpperlimit(2);
 	double result = 0;
 	int countLastFive = 0;
-	double mean = 0; double bright = 0;
+	double mean = 0;
 	for (int i = 0; i < length - 1; ++i) {
 		result += std::abs(sf[i]/(255*h*w));
 		++countLastFive;
 	}
-	mean = (countLastFive > 0) ? (result / countLastFive) : 0.0;
-	for (int i = 0; i < length-1; ++i) {
-		variance += std::pow(result - mean, 2);
-	}
-	variance /= (countLastFive);
-	bright = std::sqrt(variance);
-	return bright;
+	return result;
 }
 
 

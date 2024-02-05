@@ -108,6 +108,10 @@ void Camera::DisplayCameraFrame()
 		sqh = std::stod(pref.getprefString(SQH_KEY));
 		sqx1 = std::stod(pref.getprefString(SQX1_KEY));
 		sqy1 = std::stod(pref.getprefString(SQY1_KEY));
+		msqx1 = std::stod(pref.getprefString(MSQX1_KEY));
+		msqy1 = std::stod(pref.getprefString(MSQY1_KEY));
+		msqx2 = std::stod(pref.getprefString(MSQX2_KEY));
+		msqy2 = std::stod(pref.getprefString(MSQY2_KEY));
 		cameraIndex();
 		if (getCameraId() !=-1) {
 			cap.open(getCameraId());
@@ -143,27 +147,28 @@ void Camera::DisplayCameraFrame()
 			pztmax = std::stod(pref.getprefString(PZT_KEY));
 			cameraIndex();
 			time = std::stod(pref.getprefString(TIME_KEY));
+			current_filename = pref.getprefString(CURRENT_FILENAME_KEY);
 			cap >> dframe;
 			if (!dframe.empty()) {
 				cv::flip(dframe, frame, 1);
 				cv::resize(frame, frame, cv::Size(camwidth - 10, rowheight - 10));
 				cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
 
-				drawRectangle(tmpFrameOriginal,0, 20,125, 185 , cv::Scalar(0, 0, 255), 1);
-				cv::Mat croppedFrame = frame(cv::Rect(0, 20, 125, 165));
+				drawRectangle(tmpFrameOriginal,msqx1, msqy1, msqx1+ msqx2, msqy1+ msqy2, cv::Scalar(255, 0, 0), 1);
+				cv::Mat croppedFrame = frame(cv::Rect(msqx1, msqy1, msqx2, msqy2));
 
 				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
 				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(camwidth - 10, rowheight - 10));
 
 
-				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(0, 0, 255), 1);
+				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(255, 0, 0), 1);
 				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh));
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
 				setBrightness(tmpcalcFrame);
 				brightData.push_back(getBrightness());
+				//sdofbright.push_back(stdev(brightData));
 				bool output = pref.schmittTrigger(getBrightness(), uth, lth, false);
 				if (getDepositionBool()) {
-					current_filename = pref.getprefString(CURRENT_FILENAME_KEY);
 					if (!isComplete) {
 						if (stage < 0) {
 							stage = 0;
@@ -227,12 +232,15 @@ void Camera::DisplayCameraFrame()
 				cv::cvtColor(pztgraph, ppttzz, cv::COLOR_BGR2BGRA);
 				cv::resize(ppttzz, ppttzz, cv::Size(2 * tmpFrameOriginal.cols, 0.5*tmpFrameOriginal.rows));
 
+				//allgraph(bbdd, sdofbright, my.getUpperlimit(), "SD");
 				allgraph(bbdd, brightData, my.getUpperlimit(), "BD");
 				allgraph(ppttzz, pztVolt, 5, "PZT");
 				if (dep.drawing_box) {
-					cv::rectangle(tmpFrameCropped, dep.box, cv::Scalar(0, 255, 0), 1);
+					cv::rectangle(tmpFrameCropped, dep.box, cv::Scalar(255, 0, 0), 1);
 				}
-
+				if (pref.getprefString(AUTOGRAPH_KEY)=="on") {
+					csv.saveCSV(brightData, pztVolt, current_filename);
+				}
 				cv::Mat combinedFrame(tmpFrameOriginal.rows * 2, tmpFrameOriginal.cols * 2, tmpFrameOriginal.type());
 				tmpFrameOriginal.copyTo(combinedFrame(cv::Rect(0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
 				tmpFrameCropped.copyTo(combinedFrame(cv::Rect(tmpFrameOriginal.cols, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
@@ -323,3 +331,33 @@ void Camera::mouse_callback(int event, int x, int y, int flags, void* param) {
 		break;
 	}
 }
+
+
+double Camera::stdev(std::deque<double> pixData) {
+	int size = pixData.size();
+	double bright = 0, sum = 0;
+	double vari = 0;
+	int countLastFive = 0;
+	double variance = 0.0;
+	double mean = 0;
+	int expectedsize = 25;
+	if (pixData.empty()) {
+		return 0.0;
+	}
+	for (int i = size - expectedsize; i < size; ++i) {
+		if (i >= 0) {
+			sum += pixData[i];
+			++countLastFive;
+		}
+	}
+	mean = (countLastFive > 0) ? (sum / countLastFive) : 0.0;
+	for (int i = size - expectedsize; i < size; ++i) {
+		if (i >= 0) {
+			variance += std::pow(pixData[i] - mean, 2);
+		}
+	}
+	variance /= (countLastFive);
+	bright = std::sqrt(variance);
+	return bright;
+}
+

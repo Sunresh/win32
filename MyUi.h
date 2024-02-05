@@ -10,15 +10,18 @@ class MyUI {
 public:
 	HWND hCombo;
 	HWND btnUth,btnLth,btnPZT,btnSQH,btnSQW,btnSQX,btnSQY,btnTIME;
-	HWND txtBD, txtEVOLT,txtPZT,txtTIME,txtUTH,txtLTH, btnCAMINDEX;
+	HWND txtBD, txtEVOLT,txtPZT,txtTIME,txtUTH,txtLTH, btnCAMINDEX, btnMSQX1, btnMSQY1, btnMSQX2, btnMSQY2;
 	HWND hFrame;
+	HWND boolgraph;
+	BOOL isAutograph;
+	std::string onoff;
 	static HWND CreateButton(const wchar_t* text, int x, int y, int buttonWidth, int buttonHeight, HWND parent, int id, DWORD style = BS_PUSHBUTTON);
 	static HWND CreateStaticText(const wchar_t* text, int x, int y, int width, int height, HWND parent, int id, DWORD style = WS_BORDER);
 	static HWND MyUI::InputSaveButton(const wchar_t* inputText, int x, int y, int w, int h, const wchar_t* buttonText, HWND parent, int inputId, int buttonId, DWORD inputStyle= WS_BORDER, DWORD buttonStyle= BS_PUSHBUTTON,int ratio= 50 );
 	HWND mainUi(HWND parent);
 	void MyUI::loadPref(HWND hwnd, std::string key);
 	static void MyUI::loadPrefv(HWND hwnd, std::string key);
-
+	HWND MyUI::CtBtn(const wchar_t* text, int x, int y, int btw, int bth, HWND parent, int id);
 	static void pushh(HWND hdmi,int input,std::string key);
 	PreferenceManager* pref = nullptr;
 	std::string GetYYMMDD();
