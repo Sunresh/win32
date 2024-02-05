@@ -133,8 +133,10 @@ void Camera::DisplayCameraFrame()
 		DAQmxCreateAOVoltageChan(pztvtask, "Dev2/ao1", "ao_channel", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
 		DAQmxCfgSampClkTiming(epvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
 		DAQmxCfgSampClkTiming(pztvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
-		cv::Mat dframe, frame, tmpFrameOriginal, tmpFrameCropped, tmpcalcFrame, bbdd, ppttzz;
+		cv::Mat dframe, frame, tmpFrameOriginal, tmpFrameCropped, tmpcalcFrame, bbdd, ppttzz, combinedFrame;
+		Camera dep;
 		cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
+		cv::setMouseCallback("ORI", &Camera::mouse_callback, & dep);
 		while (getstopCamera()) {
 			uth = std::stod(pref.getprefString(UTH_KEY));
 			lth = std::stod(pref.getprefString(LTH_KEY));
@@ -160,7 +162,6 @@ void Camera::DisplayCameraFrame()
 				setBrightness(tmpcalcFrame);
 				brightData.push_back(getBrightness());
 				bool output = pref.schmittTrigger(getBrightness(), uth, lth, false);
-
 				if (getDepositionBool()) {
 					current_filename = pref.getprefString(CURRENT_FILENAME_KEY);
 					if (!isComplete) {
@@ -221,12 +222,16 @@ void Camera::DisplayCameraFrame()
 				cv::cvtColor(bd, bbdd, cv::COLOR_BGR2BGRA);
 				cv::resize(bbdd, bbdd, cv::Size(2 * tmpFrameOriginal.cols, 0.5*tmpFrameOriginal.rows));
 
+
 				cv::Mat pztgraph(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
 				cv::cvtColor(pztgraph, ppttzz, cv::COLOR_BGR2BGRA);
 				cv::resize(ppttzz, ppttzz, cv::Size(2 * tmpFrameOriginal.cols, 0.5*tmpFrameOriginal.rows));
 
-				allgraph(bbdd, brightData, 160, "BD");
+				allgraph(bbdd, brightData, my.getUpperlimit(), "BD");
 				allgraph(ppttzz, pztVolt, 5, "PZT");
+				if (dep.drawing_box) {
+					cv::rectangle(tmpFrameCropped, dep.box, cv::Scalar(0, 255, 0), 1);
+				}
 
 				cv::Mat combinedFrame(tmpFrameOriginal.rows * 2, tmpFrameOriginal.cols * 2, tmpFrameOriginal.type());
 				tmpFrameOriginal.copyTo(combinedFrame(cv::Rect(0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
@@ -268,16 +273,20 @@ void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double up
 		int elementsToSkip = graphValues.size() - (width - startPointX);
 		startPointX -= elementsToSkip;
 	}
+	std::string cu;
 	cv::Point startPoint(startPointX, height * 0.5);
 	frame = cv::Scalar(255, 255, 255);
 	line(frame, cv::Point(10, 10), cv::Point(width * 0.9, 10), cv::Scalar(0, 255, 0), 1);
 	line(frame, cv::Point(10, height - 10), cv::Point(width * 0.9, height - 10), cv::Scalar(0, 0, 255), 1);
 	for (int i = 0; i < graphValues.size(); ++i) {
+		cu = std::to_string(graphValues[i]);
 		double y = (graphValues[i] / upperLimit) * (height * 0.8) + 10;
 		cv::Point endPoint(i + startPointX, height - static_cast<int>(y));
 		line(frame, startPoint, endPoint, cv::Scalar(0, 0, 0), 1);
 		startPoint = endPoint;
 	}
+	cv::putText(frame, cu, cv::Point(10, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 10, 10), 1);
+
 	if (getEV() == 0) {
 		drawRectangle(frame, 0, 0, 10, 10, cv::Scalar(0, 0, 255), -1);
 	}
@@ -286,4 +295,31 @@ void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double up
 	}
 	/*drawYAxisValues(frame, pr.uBGR(0, 0, 0), upperLimit, yxix);
 	drawXAxis(frame, pr.uBGR(0, 0, 0));*/
+}
+
+void Camera::mouse_callback(int event, int x, int y, int flags, void* param) {
+	auto self = static_cast<Camera*>(param);
+	cv::Mat* pFrame = (cv::Mat*)param;
+	int gg = std::round(0.25 * GetSystemMetrics(SM_CXSCREEN)-10);
+	int fw = pFrame->cols/64;
+	PreferenceManager pref;
+	switch (event) {
+	case cv::EVENT_MOUSEMOVE:// end point x2y2
+		if (self->drawing_box) {
+			self->box.width = x- gg - self->box.x;
+			self->box.height = y - self->box.y;
+			pref.SetPreference(SQW_KEY, std::to_string(self->box.width));
+			pref.SetPreference(SQH_KEY, std::to_string(self->box.height));
+		}
+		break;
+	case cv::EVENT_LBUTTONDOWN://drawing start from top left
+		self->drawing_box = true;
+		self->box = cv::Rect(x- gg, y, 0, 0);
+		pref.SetPreference(SQX1_KEY, std::to_string(x- gg));
+		pref.SetPreference(SQY1_KEY, std::to_string(y));
+		break;
+	case cv::EVENT_LBUTTONUP://release
+		self->drawing_box = false;
+		break;
+	}
 }

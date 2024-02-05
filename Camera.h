@@ -55,7 +55,8 @@ public:
 
 	std::deque<double>& GetPZTvolt();
 	std::deque<double>& GetBrightData();
-
+	cv::Rect box; // Rectangle to be resized
+	bool drawing_box = false;
 	void setBrightness(cv::Mat& tmpcalcFrame);
 	const double getBrightness();
 	void DisplayCameraFrame();
@@ -65,7 +66,7 @@ public:
 	std::string current_filename ="ExampleND";
 	void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double upperLimit, const std::string& yxix);
 	void Camera::cameraIndex();
-	
+	static void Camera::mouse_callback(int event, int x, int y, int flags, void* param);
 	int Camera::getCameraId() const;
 	std::string Camera::getFilePath() const;
 
