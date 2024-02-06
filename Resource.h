@@ -55,6 +55,7 @@
 #define INPUT_MSQY2		1038
 #define BTN_MSQY2		1039
 #define TGL_BTN_GRAPH	1040
+#define TGL_BTN_RECORD	1041
 
 //setting ids
 
@@ -97,6 +98,7 @@
 #define MSQX2_KEY "MainSquareEndx2"
 #define MSQY2_KEY "MainSquareEndy2"
 #define AUTOGRAPH_KEY "AutoGraphkey"
+#define AUTORECORD_KEY "AutoRECORDkey"
 #define SHUTTER_KEY "SHUTTERkey"
 #define CURRENT_FILENAME_KEY "Thisisfilename"
 #define CURRENT_DAY_KEY "TodaysDate"

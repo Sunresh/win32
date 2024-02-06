@@ -58,7 +58,7 @@ public:
 	void start();
 	void drawRectangle(cv::Mat& frame, int x1, int y1, int x2, int y2, const cv::Scalar& color, int thickness);
 	double meanofBri(cv::Mat& iframe);
-
+	double Camera::smofdif(std::deque<double> pixData);
 	std::deque<double>& GetPZTvolt();
 	std::deque<double>& GetBrightData();
 	cv::Rect box; // Rectangle to be resized
@@ -76,6 +76,13 @@ public:
 	int Camera::getCameraId() const;
 	std::string Camera::getFilePath() const;
 	double Camera::stdev(std::deque<double> pixData);
+	bool cvflip = TRUE;
+	bool Camera::getcvflip();
+	void Camera::setcvflip(bool stop);
+
+
+
+
 };
 
 

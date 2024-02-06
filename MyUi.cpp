@@ -91,7 +91,7 @@ HWND MyUI::mainUi(HWND hWnd) {
 	CreateButton(L"Deposition ON", 0, 3 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_ON);
 	CreateButton(L"Dep Pause", 0, 4 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
 	CreateButton(L"Deposition OFF", 0, 5 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
-	hCombo = CreateButton(L"30", 0, 6 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
+	hCombo = CreateButton(L"Setting", 0, 6 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
 	CreateButton(L"EPV0", 0, 7 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
 	CreateButton(L"PZTV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
 
@@ -99,6 +99,13 @@ HWND MyUI::mainUi(HWND hWnd) {
 	loadPref(txtEVOLT, EPV_KEY);
 	txtPZT = CreateStaticText(L"PZT volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtPZT, PZT_KEY);
+
+	boolgraph = CtBtn(L"Auto-Graph", row2, 2 * btspace, btw, bth, hFrame, TGL_BTN_GRAPH);
+	if (boolgraph) {
+		SendMessage(boolgraph, pref->getprefString(AUTOGRAPH_KEY) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(AUTOGRAPH_KEY) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
+	}
+
+	/*
 	boolgraph = CtBtn(L"Auto-Graph",row2,2*btspace,btw,bth,hFrame, TGL_BTN_GRAPH);
 	if (boolgraph != NULL) {
 		isAutograph = SendMessage(boolgraph, BM_GETCHECK, 0, 0);
@@ -108,7 +115,9 @@ HWND MyUI::mainUi(HWND hWnd) {
 		else {
 			SendMessage(boolgraph, BM_SETCHECK, BST_UNCHECKED, 0);
 		}
-	}
+	}*/
+
+
 	btnMSQX1 = InputSaveButton(L"0", row2, 3 * btspace, btw, bth, L"MSQX1", hFrame, INPUT_MSQX1, BTN_MSQX1, NULL);
 	loadPrefv(btnMSQX1, MSQX1_KEY);
 	btnMSQY1 = InputSaveButton(L"0", row2, 4 * btspace, btw, bth, L"MSQY1", hFrame, INPUT_MSQY1, BTN_MSQY1, NULL);
@@ -117,6 +126,10 @@ HWND MyUI::mainUi(HWND hWnd) {
 	loadPrefv(btnMSQX2, MSQX2_KEY);
 	btnMSQY2 = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"MSQY2", hFrame, INPUT_MSQY2, BTN_MSQY2, NULL);
 	loadPrefv(btnMSQY2, MSQY2_KEY);
+	boolrecord = CtBtn(L"Auto-REcord", row2, 7 * btspace, btw, bth, hFrame, TGL_BTN_RECORD);
+	if (boolgraph) {
+		SendMessage(boolrecord, pref->getprefString(AUTORECORD_KEY) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(AUTORECORD_KEY) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
+	}
 
 	//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * btspace, btw, bth, hFrame, IDC_PPZZ);
 	

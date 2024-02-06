@@ -275,7 +275,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case TGL_BTN_GRAPH:
 			{
-				(pref.getprefString(AUTOGRAPH_KEY)=="on")? pref.SetPreference(AUTOGRAPH_KEY,"off") : pref.SetPreference(AUTOGRAPH_KEY, "on");
+				(pref.getprefString(AUTOGRAPH_KEY) == "on") ? pref.SetPreference(AUTOGRAPH_KEY, "off") : pref.SetPreference(AUTOGRAPH_KEY, "on");
+			}
+			break;
+			case TGL_BTN_RECORD:
+			{
+				(pref.getprefString(AUTORECORD_KEY) == "on") ? pref.SetPreference(AUTORECORD_KEY, "off") : pref.SetPreference(AUTORECORD_KEY, "on");
 			}
 			break;
 

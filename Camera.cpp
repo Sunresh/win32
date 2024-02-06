@@ -3,7 +3,13 @@
 void Camera::setStopCamera(bool stop) {
 	stopCamera = stop;
 }
-bool Camera::getstopCamera(){
+bool Camera::getcvflip() {
+	return cvflip;
+}
+void Camera::setcvflip(bool stop) {
+	cvflip = stop;
+}
+bool Camera::getstopCamera() {
 	return stopCamera;
 }
 void Camera::setDepositionBool(bool stop) {
@@ -114,9 +120,11 @@ void Camera::DisplayCameraFrame()
 		cameraIndex();
 		if (getCameraId() != -1) {
 			cap.open(getCameraId());
+			setcvflip(TRUE);
 		}
 		else {
 			cap.open(getFilePath());
+			setcvflip(FALSE);
 		}
 		if (!cap.isOpened()) {
 			return;
@@ -128,7 +136,8 @@ void Camera::DisplayCameraFrame()
 		double timedelay = 0;
 		bool isComplete = FALSE;
 		bool isRedeposition = FALSE;
-
+		bool isWithoutredeposition = TRUE;
+		bool isBasecomplte = FALSE;
 
 		DAQmxCreateTask("", &epvtask);
 		DAQmxCreateTask("", &pztvtask);
@@ -157,7 +166,12 @@ void Camera::DisplayCameraFrame()
 			cap >> dframe;
 			videoWriter << dframe;
 			if (!dframe.empty()) {
-				cv::flip(dframe, frame, 1);
+				if (getcvflip()) {
+					cv::flip(dframe, frame, 1);
+				}
+				else {
+					frame = dframe.clone();
+				}
 				cv::resize(frame, frame, cv::Size(camwidth - 10, rowheight - 10));
 				cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
 
@@ -173,34 +187,42 @@ void Camera::DisplayCameraFrame()
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
 				setBrightness(tmpcalcFrame);
 				brightData.push_back(getBrightness());
-				//sdofbright.push_back(stdev(brightData));
-				bool output = pref.schmittTrigger(getBrightness(), uth, lth, false);
+
+
+				sdofbright.push_back(smofdif(brightData));
+				bool output = pref.schmittTrigger(smofdif(brightData), uth, lth, false);
+
 				if (getDepositionBool()) {
 					if (!isComplete) {
+						if (stage < (0.04 * pztmax)&& !isBasecomplte) {
+							stage += (0.0002 * pztmax);
+							OutputDebugStringW(L"\n\nbase\n\n");
+							setEV(std::stod(pref.getprefString(EPV_KEY)));
+						}
+						if (stage > (0.04 * pztmax)) {
+							isBasecomplte = TRUE;
+							setEV(std::stod(pref.getprefString(EPV_KEY)));
+						}
 						if (stage < 0) {
 							stage = 0;
 							timedelay = 0.0;
 						}
-						if (!isRedeposition && output) {
-							if (stage < (0.04 * pztmax)) {
-								stage += (0.0002 * pztmax);
-							}
-							else {
-								stage += pztmax / (time);
-							}
+					    if (!isRedeposition && output && isWithoutredeposition) {
+							stage += pztmax / (time);
 							setEV(std::stod(pref.getprefString(EPV_KEY)));
 						}
 						if (isRedeposition && output) {
 							stage += (pztmax / (time + timedelay));
 							setEV(std::stod(pref.getprefString(EPV_KEY)));
 						}
-						if (!output) {
+						if (!output && isBasecomplte) {
 							timedelay += 1;
 							stage -= pztmax / (time * 0.25);
 							setEV(0);
 							isRedeposition = true;
+							isWithoutredeposition = false;
 						}
-						if (stage > pztmax && !isComplete) {
+						if (stage >= pztmax && !isComplete) {
 							isComplete = true;
 							stage -= pztmax / time;
 							setEV(0);
@@ -224,6 +246,7 @@ void Camera::DisplayCameraFrame()
 					}
 					pztVolt.push_back(stage);
 				}
+
 				double hhee = getEV();
 				DAQmxWriteAnalogF64(epvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &hhee, nullptr, nullptr);
 				DAQmxWriteAnalogF64(pztvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &stage, nullptr, nullptr);
@@ -238,9 +261,9 @@ void Camera::DisplayCameraFrame()
 				cv::cvtColor(pztgraph, ppttzz, cv::COLOR_BGR2BGRA);
 				cv::resize(ppttzz, ppttzz, cv::Size(2 * tmpFrameOriginal.cols, 0.5*tmpFrameOriginal.rows));
 
-				//allgraph(bbdd, sdofbright, my.getUpperlimit(), "SD");
-				allgraph(bbdd, brightData, my.getUpperlimit(), "BD");
-				allgraph(ppttzz, pztVolt, 5, "PZT");
+				allgraph(bbdd, sdofbright, my.getUpperlimit(), "SD");
+				//allgraph(bbdd, brightData, my.getUpperlimit(), "BD");
+				allgraph(ppttzz, pztVolt, std::stod(pref.getprefString(PZT_KEY)), "PZT");
 				if (dep.drawing_box) {
 					cv::rectangle(tmpFrameCropped, dep.box, cv::Scalar(255, 0, 0), 1);
 				}
@@ -250,8 +273,10 @@ void Camera::DisplayCameraFrame()
 				bbdd.copyTo(combinedFrame(cv::Rect(0, tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
 				ppttzz.copyTo(combinedFrame(cv::Rect(0, 1.5*tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
 
-				if (pref.getprefString(AUTOGRAPH_KEY) == "on" && getDepositionBool()) {
+				if (pref.getprefString(AUTOGRAPH_KEY) == "on" || getDepositionBool()) {
 					csv.saveCSV(brightData, pztVolt, current_filename);
+				}
+				if (pref.getprefString(AUTORECORD_KEY) == "on" || getDepositionBool()) {
 					videoWriter.write(combinedFrame);
 				}
 
@@ -340,7 +365,20 @@ void Camera::mouse_callback(int event, int x, int y, int flags, void* param) {
 	}
 }
 
-
+double Camera::smofdif(std::deque<double> pixData) {
+	int size = pixData.size();
+	double sum = 0;
+	int expectedsize = 25;
+	if (pixData.empty()) {
+		return 0.0;
+	}
+	for (int i = size - expectedsize; i < size; ++i) {
+		if (i >= 0) {
+			sum += pixData[i];
+		}
+	}
+	return sum;
+}
 double Camera::stdev(std::deque<double> pixData) {
 	int size = pixData.size();
 	double bright = 0, sum = 0;
