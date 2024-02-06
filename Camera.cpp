@@ -100,9 +100,6 @@ void Camera::pauseCamera() {
 
 void Camera::DisplayCameraFrame()
 {
-	OutputDebugStringW(L"\n\n\n\naayyo\n\n\n\n\n");
-	
-
 	try {
 		sqw = std::stod(pref.getprefString(SQW_KEY));
 		sqh = std::stod(pref.getprefString(SQH_KEY));
@@ -112,8 +109,10 @@ void Camera::DisplayCameraFrame()
 		msqy1 = std::stod(pref.getprefString(MSQY1_KEY));
 		msqx2 = std::stod(pref.getprefString(MSQX2_KEY));
 		msqy2 = std::stod(pref.getprefString(MSQY2_KEY));
+
+
 		cameraIndex();
-		if (getCameraId() !=-1) {
+		if (getCameraId() != -1) {
 			cap.open(getCameraId());
 		}
 		else {
@@ -121,7 +120,7 @@ void Camera::DisplayCameraFrame()
 		}
 		if (!cap.isOpened()) {
 			return;
-		}
+		}		
 		double stage = 0;
 		
 		const int camwidth = std::round(0.25 * GetSystemMetrics(SM_CXSCREEN));
@@ -139,6 +138,13 @@ void Camera::DisplayCameraFrame()
 		DAQmxCfgSampClkTiming(pztvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
 		cv::Mat dframe, frame, tmpFrameOriginal, tmpFrameCropped, tmpcalcFrame, bbdd, ppttzz, combinedFrame;
 		Camera dep;
+		cv::VideoWriter videoWriter(pref.getprefString(CURRENT_FOLDER)+"\\"+pref.getprefString(CURRENT_FILENAME_KEY) + ".mp4", cv::VideoWriter::fourcc('H', '2', '6', '4'), 30.0, cv::Size(2 * (camwidth - 10), 2 * (rowheight - 10)));
+
+		if (!videoWriter.isOpened()) {
+			std::cerr << "Error: Couldn't open the output video file for writing!" << std::endl;
+			return;
+		}
+
 		cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
 		cv::setMouseCallback("ORI", &Camera::mouse_callback, & dep);
 		while (getstopCamera()) {
@@ -149,6 +155,7 @@ void Camera::DisplayCameraFrame()
 			time = std::stod(pref.getprefString(TIME_KEY));
 			current_filename = pref.getprefString(CURRENT_FILENAME_KEY);
 			cap >> dframe;
+			videoWriter << dframe;
 			if (!dframe.empty()) {
 				cv::flip(dframe, frame, 1);
 				cv::resize(frame, frame, cv::Size(camwidth - 10, rowheight - 10));
@@ -206,7 +213,6 @@ void Camera::DisplayCameraFrame()
 						setCaptureScreenBool(TRUE);
 						setDepositionBool(FALSE);
 					}
-					csv.saveCSV(brightData, pztVolt, current_filename);
 				}
 				if (!getDepositionBool()) {
 					setEV(0);
@@ -238,17 +244,20 @@ void Camera::DisplayCameraFrame()
 				if (dep.drawing_box) {
 					cv::rectangle(tmpFrameCropped, dep.box, cv::Scalar(255, 0, 0), 1);
 				}
-				if (pref.getprefString(AUTOGRAPH_KEY)=="on") {
-					csv.saveCSV(brightData, pztVolt, current_filename);
-				}
 				cv::Mat combinedFrame(tmpFrameOriginal.rows * 2, tmpFrameOriginal.cols * 2, tmpFrameOriginal.type());
 				tmpFrameOriginal.copyTo(combinedFrame(cv::Rect(0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
 				tmpFrameCropped.copyTo(combinedFrame(cv::Rect(tmpFrameOriginal.cols, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
 				bbdd.copyTo(combinedFrame(cv::Rect(0, tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
 				ppttzz.copyTo(combinedFrame(cv::Rect(0, 1.5*tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
 
+				if (pref.getprefString(AUTOGRAPH_KEY) == "on" && getDepositionBool()) {
+					csv.saveCSV(brightData, pztVolt, current_filename);
+					videoWriter.write(combinedFrame);
+				}
+
 				cv::imshow("ORI", combinedFrame);
 				cv::moveWindow("ORI", -10, -10);
+
 			}
 			if (cv::waitKey(1) == 'q'|| !getstopCamera()) {
 				stopCamera = true;
@@ -258,14 +267,13 @@ void Camera::DisplayCameraFrame()
 		}
 		DAQmxClearTask(epvtask);
 		DAQmxClearTask(pztvtask);
+		videoWriter.release();
 		cap.release();
 	}
 	catch (const std::exception& e) {
-		// Handle exceptions and display an error message
 		myUIInstance.messi(e.what());
 	}
 	catch (...) {
-		// Handle other types of exceptions
 		myUIInstance.mess(L"Unknown error occurred.");
 	}
 }

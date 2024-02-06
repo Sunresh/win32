@@ -97,6 +97,7 @@
 #define MSQX2_KEY "MainSquareEndx2"
 #define MSQY2_KEY "MainSquareEndy2"
 #define AUTOGRAPH_KEY "AutoGraphkey"
+#define SHUTTER_KEY "SHUTTERkey"
 #define CURRENT_FILENAME_KEY "Thisisfilename"
 #define CURRENT_DAY_KEY "TodaysDate"
 #define CURRENT_FOLDER "MYfolder"
@@ -107,8 +108,6 @@
 #define ID_BTN_CAMERA_ON 130
 #define ID_BTN_CAMERA_OFF 131
 #define ID_BTN_LASER_ON 132
-#define ID_BTN_LASER_OFF 133
-#define IDC_STATIC_HEIGHT 134
 #define ID_BTN_DEPOSITION_ON 135
 #define ID_BTN_DEPOSITION_OFF 136
 #define ID_CAMERA_OPTION 137

@@ -7,6 +7,8 @@
 #include "preferencemanager.h"
 #include "MyUi.h"
 #include "ExportCsv.h"
+#include <opencv2/videoio.hpp>
+
 
 class Camera {
 public:

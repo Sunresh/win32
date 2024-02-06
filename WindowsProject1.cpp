@@ -181,16 +181,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				laserState = !laserState; // Toggle the laser state
 			}
 			break;
-			case ID_BTN_LASER_OFF:
-			{
-				DAQmxCreateTask("", &lserOff);
-				DAQmxCreateDOChan(lserOff, "Dev2/port0/line0", "", DAQmx_Val_ChanForAllLines);
-				uInt32 data = false;
-				DAQmxWriteDigitalU32(lserOff, 1, 1, 10.0, DAQmx_Val_GroupByChannel, &data, nullptr, nullptr);
-				DAQmxStopTask(lserOff);
-				DAQmxClearTask(lserOff);
-			}
-			break;
 			case ID_BTN_EPDV0:
 			{
 				daq.addAnalogChannel("Dev2/ao0");

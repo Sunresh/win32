@@ -9,9 +9,7 @@ HWND MyUI::CreateButton(const wchar_t* text, int x, int y, int btw, int bth, HWN
 HWND MyUI::CtBtn(const wchar_t* text, int x, int y, int btw, int bth, HWND parent, int id)
 {
 	// Use BS_AUTOCHECKBOX style for toggle button
-	HWND hwndToggleButton = CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
-	SendMessage(hwndToggleButton, BM_SETCHECK, isAutograph ? BST_CHECKED : BST_UNCHECKED, 0);
-	return hwndToggleButton;
+	return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
 }
 
 
@@ -90,13 +88,12 @@ HWND MyUI::mainUi(HWND hWnd) {
 	CreateButton(L"Camera ON", 0, 0, btw, bth, hFrame, ID_BTN_CAMERA_ON);
 	CreateButton(L"Camera OFF", 0, btspace, btw, bth, hFrame, ID_BTN_CAMERA_OFF);
 	CreateButton(L"Laser ON", 0, 2 * btspace, btw, bth, hFrame, ID_BTN_LASER_ON);
-	CreateButton(L"Laser OFF", 0, 3 * btspace, btw, bth, hFrame, ID_BTN_LASER_OFF);
-	CreateButton(L"Deposition ON", 0, 4 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_ON);
-	CreateButton(L"Dep Pause", 0, 5 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
-	CreateButton(L"Deposition OFF", 0, 6 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
-	hCombo = CreateButton(L"30", 0, 7 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
-	CreateButton(L"EPV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
-	CreateButton(L"PZTV0", 0, 10 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
+	CreateButton(L"Deposition ON", 0, 3 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_ON);
+	CreateButton(L"Dep Pause", 0, 4 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
+	CreateButton(L"Deposition OFF", 0, 5 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
+	hCombo = CreateButton(L"30", 0, 6 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
+	CreateButton(L"EPV0", 0, 7 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
+	CreateButton(L"PZTV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
 
 	txtEVOLT = CreateStaticText(L"E.Volt:", row2, 0 * btspace, btw, bth, hFrame, NULL);
 	loadPref(txtEVOLT, EPV_KEY);
