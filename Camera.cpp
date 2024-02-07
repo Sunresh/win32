@@ -293,7 +293,7 @@ void Camera::DisplayCameraFrame()
 				ppttzz.copyTo(combinedFrame(cv::Rect(0, 1.5*tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
 
 				if (pref.getprefString(AUTOGRAPH_KEY) == "on" || getDepositionBool()) {
-					csv.saveCSV(brightData, pztVolt, current_filename);
+					csv.saveCSV(sdofbright, pztVolt, current_filename);
 				}
 				if (pref.getprefString(AUTORECORD_KEY) == "on" || getDepositionBool()) {
 					videoWriter.write(combinedFrame);
