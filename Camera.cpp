@@ -155,7 +155,7 @@ void Camera::DisplayCameraFrame()
 		}
 
 		cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
-		cv::setMouseCallback("ORI", &Camera::mouse_callback, & dep);
+		cv::setMouseCallback("ORI", &Camera::mouse_callback, &dep);
 		while (getstopCamera()) {
 			uth = std::stod(pref.getprefString(UTH_KEY));
 			lth = std::stod(pref.getprefString(LTH_KEY));
@@ -175,14 +175,14 @@ void Camera::DisplayCameraFrame()
 				cv::resize(frame, frame, cv::Size(camwidth - 10, rowheight - 10));
 				cv::cvtColor(frame, tmpFrameOriginal, cv::COLOR_BGR2BGRA);
 
-				drawRectangle(tmpFrameOriginal,msqx1, msqy1, msqx1+ msqx2, msqy1+ msqy2, cv::Scalar(255, 0, 0), 1);
+				drawRectangle(tmpFrameOriginal,msqx1, msqy1, msqx1+ msqx2, msqy1+ msqy2, cv::Scalar(255, 255, 0), 1);
 				cv::Mat croppedFrame = frame(cv::Rect(msqx1, msqy1, msqx2, msqy2));
 
 				cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
 				cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(camwidth - 10, rowheight - 10));
 
 
-				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(255, 0, 0), 1);
+				drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1+sqw, sqy1+sqh, cv::Scalar(255, 0, 255), 1);
 				cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh));
 				cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
 				setBrightness(tmpcalcFrame);
@@ -264,8 +264,27 @@ void Camera::DisplayCameraFrame()
 				allgraph(bbdd, sdofbright, my.getUpperlimit(), "SD");
 				//allgraph(bbdd, brightData, my.getUpperlimit(), "BD");
 				allgraph(ppttzz, pztVolt, std::stod(pref.getprefString(PZT_KEY)), "PZT");
+
 				if (dep.drawing_box) {
 					cv::rectangle(tmpFrameCropped, dep.box, cv::Scalar(255, 0, 0), 1);
+					pref.SetPreference(SQX1_KEY, std::to_string((dep.box.x)));
+					pref.SetPreference(SQY1_KEY, std::to_string(dep.box.y));
+					pref.SetPreference(SQW_KEY, std::to_string(dep.box.width));
+					pref.SetPreference(SQH_KEY, std::to_string(dep.box.height));
+				}
+				if (dep.drawing_boxSecond) {
+					cv::rectangle(tmpFrameOriginal, dep.boxSecond, cv::Scalar(2, 0, 20), 1);
+					pref.SetPreference(MSQX1_KEY, std::to_string(dep.boxSecond.x));
+					pref.SetPreference(MSQY1_KEY, std::to_string(dep.boxSecond.y));
+					pref.SetPreference(MSQX2_KEY, std::to_string(dep.boxSecond.width));
+					pref.SetPreference(MSQY2_KEY, std::to_string(dep.boxSecond.height));
+				}
+
+				if (getEV() == 0) {
+					drawRectangle(ppttzz,0, ppttzz.rows-20, 20, ppttzz.rows, cv::Scalar(0, 0, 255), -1);
+				}
+				else {
+					drawRectangle(ppttzz,0, ppttzz.rows-20, 20, ppttzz.rows, cv::Scalar(0, 255, 0), -1);
 				}
 				cv::Mat combinedFrame(tmpFrameOriginal.rows * 2, tmpFrameOriginal.cols * 2, tmpFrameOriginal.type());
 				tmpFrameOriginal.copyTo(combinedFrame(cv::Rect(0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
@@ -303,6 +322,44 @@ void Camera::DisplayCameraFrame()
 	}
 }
 
+void Camera::mouse_callback(int event, int x, int y, int flags, void* param) {
+	auto self = static_cast<Camera*>(param);
+	int w = std::round(0.25 * GetSystemMetrics(SM_CXSCREEN) - 10);
+	int h = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN) - 10);
+	PreferenceManager pref;
+	switch (event) {
+	case cv::EVENT_MOUSEMOVE://x2y2
+		if (self->drawing_box) {
+			if (x >= w && y >= 0 && y < h) {
+				self->box.width = x - w - self->box.x;
+				self->box.height = y - self->box.y;
+			}
+		}
+		if (self->drawing_boxSecond) {
+			if (x >= 0 && y >= 0 && x < w && y < h) {
+				self->boxSecond.width = x - self->boxSecond.x;
+				self->boxSecond.height = y - self->boxSecond.y;
+			}
+		}
+		break;
+	case cv::EVENT_LBUTTONDOWN://x1y1
+		if (x >= w && y >= 0 && y < h) {
+			self->drawing_box = true;
+			self->box = cv::Rect(x - w, y, 0, 0);
+		}
+		if (x >= 0 && y >= 0 && x < w && y < h) {
+			self->drawing_boxSecond = true;
+			self->boxSecond = cv::Rect(x, y, 0, 0);
+		}
+		break;
+	case cv::EVENT_LBUTTONUP:
+		self->drawing_box = false;
+		self->drawing_boxSecond = false;
+		break;
+	}
+}
+
+
 void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double upperLimit, const std::string& yxix) {
 	int startPointX = 30;
 	if (graphValues.empty()) {
@@ -318,6 +375,10 @@ void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double up
 	cv::Point startPoint(startPointX, height * 0.5);
 	frame = cv::Scalar(255, 255, 255);
 	line(frame, cv::Point(10, 10), cv::Point(width * 0.9, 10), cv::Scalar(0, 255, 0), 1);
+	std::ostringstream oss;
+	oss << std::fixed << std::setprecision(2) << upperLimit/2; // Format double with 2 decimal places
+	std::string myString = oss.str();
+	cv::putText(frame, myString, cv::Point(0, height *0.5), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(10, 10, 10), 1);
 	line(frame, cv::Point(10, height - 10), cv::Point(width * 0.9, height - 10), cv::Scalar(0, 0, 255), 1);
 	for (int i = 0; i < graphValues.size(); ++i) {
 		cu = std::to_string(graphValues[i]);
@@ -328,47 +389,14 @@ void Camera::allgraph(cv::Mat& frame, std::deque<double>& graphValues, double up
 	}
 	cv::putText(frame, cu, cv::Point(10, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 10, 10), 1);
 
-	if (getEV() == 0) {
-		drawRectangle(frame, 0, 0, 10, 10, cv::Scalar(0, 0, 255), -1);
-	}
-	else {
-		drawRectangle(frame, 0, 0, 10, 10, cv::Scalar(0,255,0), -1);
-	}
-	/*drawYAxisValues(frame, pr.uBGR(0, 0, 0), upperLimit, yxix);
-	drawXAxis(frame, pr.uBGR(0, 0, 0));*/
 }
 
-void Camera::mouse_callback(int event, int x, int y, int flags, void* param) {
-	auto self = static_cast<Camera*>(param);
-	cv::Mat* pFrame = (cv::Mat*)param;
-	int gg = std::round(0.25 * GetSystemMetrics(SM_CXSCREEN)-10);
-	int fw = pFrame->cols/64;
-	PreferenceManager pref;
-	switch (event) {
-	case cv::EVENT_MOUSEMOVE:// end point x2y2
-		if (self->drawing_box) {
-			self->box.width = x- gg - self->box.x;
-			self->box.height = y - self->box.y;
-			pref.SetPreference(SQW_KEY, std::to_string(self->box.width));
-			pref.SetPreference(SQH_KEY, std::to_string(self->box.height));
-		}
-		break;
-	case cv::EVENT_LBUTTONDOWN://drawing start from top left
-		self->drawing_box = true;
-		self->box = cv::Rect(x- gg, y, 0, 0);
-		pref.SetPreference(SQX1_KEY, std::to_string(x- gg));
-		pref.SetPreference(SQY1_KEY, std::to_string(y));
-		break;
-	case cv::EVENT_LBUTTONUP://release
-		self->drawing_box = false;
-		break;
-	}
-}
+
 
 double Camera::smofdif(std::deque<double> pixData) {
 	int size = pixData.size();
 	double sum = 0;
-	int expectedsize = 25;
+	int expectedsize = 90;
 	if (pixData.empty()) {
 		return 0.0;
 	}
@@ -386,7 +414,7 @@ double Camera::stdev(std::deque<double> pixData) {
 	int countLastFive = 0;
 	double variance = 0.0;
 	double mean = 0;
-	int expectedsize = 25;
+	int expectedsize = 90;
 	if (pixData.empty()) {
 		return 0.0;
 	}

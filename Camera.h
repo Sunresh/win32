@@ -63,6 +63,9 @@ public:
 	std::deque<double>& GetBrightData();
 	cv::Rect box; // Rectangle to be resized
 	bool drawing_box = false;
+
+	cv::Rect boxSecond; // Rectangle to be resized
+	bool drawing_boxSecond = false;
 	void setBrightness(cv::Mat& tmpcalcFrame);
 	const double getBrightness();
 	void DisplayCameraFrame();
