@@ -189,52 +189,38 @@ void Camera::DisplayCameraFrame()
 				brightData.push_back(getBrightness());
 
 
-				sdofbright.push_back(smofdif(brightData));
-				bool output = pref.schmittTrigger(smofdif(brightData), uth, lth, false);
+				sdofbright.push_back(stdev(brightData));
+				bool output = pref.schmittTrigger(stdev(brightData), uth, lth, false);
 
 				if (getDepositionBool()) {
-					if (!isComplete) {
-						if (stage < (0.04 * pztmax)&& !isBasecomplte) {
-							stage += (0.0002 * pztmax);
-							OutputDebugStringW(L"\n\nbase\n\n");
-							setEV(std::stod(pref.getprefString(EPV_KEY)));
-						}
-						if (stage > (0.04 * pztmax)) {
-							isBasecomplte = TRUE;
-							setEV(std::stod(pref.getprefString(EPV_KEY)));
-						}
-						if (stage < 0) {
-							stage = 0;
-							timedelay = 0.0;
-						}
-					    if (!isRedeposition && output && isWithoutredeposition) {
-							stage += pztmax / (time);
-							setEV(std::stod(pref.getprefString(EPV_KEY)));
-						}
-						if (isRedeposition && output) {
-							stage += (pztmax / (time + timedelay));
-							setEV(std::stod(pref.getprefString(EPV_KEY)));
-						}
-						if (!output && isBasecomplte) {
-							timedelay += 1;
-							stage -= pztmax / (time * 0.25);
-							setEV(0);
-							isRedeposition = true;
-							isWithoutredeposition = false;
-						}
-						if (stage >= pztmax && !isComplete) {
-							isComplete = true;
-							stage -= pztmax / time;
-							setEV(0);
-						}
-						pztVolt.push_back(stage);
-
+					if (stage < (0.04 * pztmax) && !isBasecomplte) {//Making Base
+						stage += (0.25 * pztmax / time);
 					}
-					if (isComplete) {
-						setEV(0);
+					if (stage > (0.04 * pztmax)) {//after completing base
+						isBasecomplte = TRUE;
+					}
+					if (stage < 0) {
+						stage = 0;
+						timedelay = 0.0;
+					}
+					if (!isRedeposition && output && isWithoutredeposition && isBasecomplte) {//normal deposition
+						stage += pztmax / (time);
+					}
+					if (isRedeposition && output) {// Redeposition
+						stage += (pztmax / (time + timedelay));
+					}
+					if (!output && isBasecomplte) { //stage control to get lost position
+						timedelay += 1;
+						stage -= pztmax / (time * 0.25);
+						isRedeposition = true;
+						isWithoutredeposition = false;
+					}
+					if (stage >= pztmax) {
 						setCaptureScreenBool(TRUE);
 						setDepositionBool(FALSE);
 					}
+					pztVolt.push_back(stage);
+					setEV(std::stod(pref.getprefString(EPV_KEY)));
 				}
 				if (!getDepositionBool()) {
 					setEV(0);
@@ -246,7 +232,6 @@ void Camera::DisplayCameraFrame()
 					}
 					pztVolt.push_back(stage);
 				}
-
 				double hhee = getEV();
 				DAQmxWriteAnalogF64(epvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &hhee, nullptr, nullptr);
 				DAQmxWriteAnalogF64(pztvtask, 1, true, 10.0, DAQmx_Val_GroupByChannel, &stage, nullptr, nullptr);
@@ -255,7 +240,6 @@ void Camera::DisplayCameraFrame()
 				cv::Mat bd(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
 				cv::cvtColor(bd, bbdd, cv::COLOR_BGR2BGRA);
 				cv::resize(bbdd, bbdd, cv::Size(2 * tmpFrameOriginal.cols, 0.5*tmpFrameOriginal.rows));
-
 
 				cv::Mat pztgraph(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
 				cv::cvtColor(pztgraph, ppttzz, cv::COLOR_BGR2BGRA);
@@ -434,4 +418,5 @@ double Camera::stdev(std::deque<double> pixData) {
 	bright = std::sqrt(variance);
 	return bright;
 }
+
 
