@@ -26,4 +26,28 @@ private:
 
 };
 
+class SchmittTrigger {
+public:
+	SchmittTrigger(double upperThreshold, double lowerThreshold)
+		: upperThreshold_(upperThreshold), lowerThreshold_(lowerThreshold), output_(false) {
+	}
+	bool processInput(double inputValue) {
+		if (inputValue >= upperThreshold_) {
+			output_ = true;
+		}
+		else if (inputValue <= lowerThreshold_) {
+			output_ = false;
+		}
+		return output_;
+	}
+	bool getOutput() const {
+		return output_;
+	}
+
+private:
+	double upperThreshold_;
+	double lowerThreshold_;
+	bool output_;
+};
+
 #endif // PREFERENCE_MANAGER_H

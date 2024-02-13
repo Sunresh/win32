@@ -127,8 +127,12 @@ HWND MyUI::mainUi(HWND hWnd) {
 	btnMSQY2 = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"MSQY2", hFrame, INPUT_MSQY2, BTN_MSQY2, NULL);
 	loadPrefv(btnMSQY2, MSQY2_KEY);
 	boolrecord = CtBtn(L"Auto-REcord", row2, 7 * btspace, btw, bth, hFrame, TGL_BTN_RECORD);
-	if (boolgraph) {
+	if (boolrecord) {
 		SendMessage(boolrecord, pref->getprefString(AUTORECORD_KEY) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(AUTORECORD_KEY) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
+	}
+	sdordiff = CtBtn(L"SD-DIFF", row2, 9 * btspace, btw, bth, hFrame, TGL_BTN_SDORDIFF);
+	if (sdordiff) {
+		SendMessage(sdordiff, pref->getprefString(ADORDIFF_KEY) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(ADORDIFF_KEY) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
 	}
 
 	//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * btspace, btw, bth, hFrame, IDC_PPZZ);
