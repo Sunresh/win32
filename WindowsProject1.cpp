@@ -2,7 +2,6 @@
 #include <atomic>
 #include <algorithm>
 #include "Camera.h"
-#include "PlotGraph.h"
 #include "ScreenRecord.h"
 #include "resource.h"
 #include "framework.h"
@@ -281,6 +280,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case TGL_BTN_RECORD:
 			{
 				(pref.getprefString(AUTORECORD_KEY) == "on") ? pref.SetPreference(AUTORECORD_KEY, "off") : pref.SetPreference(AUTORECORD_KEY, "on");
+			}
+			break;
+			case TGL_BTN_SDORDIFF:
+			{
+				(pref.getprefString(ADORDIFF_KEY) == "on") ? pref.SetPreference(ADORDIFF_KEY, "off") : pref.SetPreference(ADORDIFF_KEY, "on");
 			}
 			break;
 

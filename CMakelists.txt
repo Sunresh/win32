@@ -12,8 +12,7 @@ add_executable(YourProjectName WIN32
 			"WindowsProject1.rc"
 			"framework.h"
 			"Resource.h" 
-			"targetver.h"  "ExportCsv.h" "daq.h" "BrightnessCalculation.h" "preferencemanager.h"
- "preferencemanager.cpp" "BrightnessCalculation.cpp" "Camera.h" "Camera.cpp" "ScreenRecord.h" "PlotGraph.h" "PlotGraph.cpp" "MyUi.h" "MyUi.cpp" "ExportCsv.cpp" "ScreenRecord.cpp" "ExportCsv.h")
+			"targetver.h"  "ExportCsv.h" "daq.h" "BrightnessCalculation.h" "preferencemanager.h" "preferencemanager.cpp" "Camera.h" "ScreenRecord.h" "MyUi.h" "MyUi.cpp" "ScreenRecord.cpp")
 
 link_directories("C:/opencv/build/x64/v16/lib")
 target_link_libraries(${PROJECT_NAME} PRIVATE comctl32.lib ${OpenCV_LIBS} ${NIDAQmx_LIBRARY} Shlwapi.lib)
