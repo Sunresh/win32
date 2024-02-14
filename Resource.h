@@ -105,6 +105,7 @@
 #define CURRENT_FILENAME_KEY "Thisisfilename"
 #define CURRENT_DAY_KEY "TodaysDate"
 #define CURRENT_FOLDER "MYfolder"
+#define CURRENT_VIDEO_FOLDER "MYvideoFolder"
 #define CameraIndex     "CameraIndex"
 #define WM_USER_UPDATE (WM_USER + 1)
 

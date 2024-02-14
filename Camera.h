@@ -95,7 +95,7 @@ public:
 	}
 
 	double Camera::feedbackSD() {
-		return 10*stdevu(GetBrightData());
+		return 10*stdev(getBrightness());
 	}
 
 
@@ -160,6 +160,9 @@ public:
 	}
 	std::deque<double>& Camera::GetBrightData() {
 		return brightData;
+	}
+	std::deque<double>& Camera::finalData4graph() {
+		return sdValues;
 	}
 	std::deque<double>& Camera::GetSD() {
 		return sdValues;
@@ -240,7 +243,7 @@ public:
 			DAQmxCreateAOVoltageChan(pztvtask, "Dev2/ao1", "ao_channel", 0.0, 5.0, DAQmx_Val_Volts, nullptr);
 			DAQmxCfgSampClkTiming(epvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
 			DAQmxCfgSampClkTiming(pztvtask, "", 10.0, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 1);
-			cv::Mat dframe, frame, tmpFrameOriginal, tmpFrameCropped, tmpcalcFrame, bbdd, ppttzz, combinedFrame;
+			cv::Mat dframe, frame, tmpFrameOriginal, tmpFrameCropped, tmpcalcFrame, bbdd, ppttzz, combinedFrame, sdgrphlayout;
 			Camera dep;
 
 			cv::VideoWriter videoWriter;
@@ -320,7 +323,7 @@ public:
 						setEV(std::stod(pref.getprefString(EPV_KEY)));
 						
 						if (!isRecord) {
-							videoWriter.open(pref.getprefString(CURRENT_FOLDER) + "\\" + pref.getprefString(CURRENT_FILENAME_KEY) + ".mp4", cv::VideoWriter::fourcc('H', '2', '6', '4'), 30.0, cv::Size(2 * (camwidth - 10), 2 * (rowheight - 10)));
+							videoWriter.open(pref.getprefString(CURRENT_VIDEO_FOLDER) + "\\" + pref.getprefString(CURRENT_FILENAME_KEY) + ".mp4", cv::VideoWriter::fourcc('H', '2', '6', '4'), 30.0, cv::Size(2 * (camwidth - 10), 2 * (rowheight - 10)));
 							isRecord = true;
 						}
 					}
@@ -341,13 +344,21 @@ public:
 					// Display the original and cropped frames combined in a single window
 					cv::Mat bd(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
 					cv::cvtColor(bd, bbdd, cv::COLOR_BGR2BGRA);
-					cv::resize(bbdd, bbdd, cv::Size(2 * tmpFrameOriginal.cols, 0.5 * tmpFrameOriginal.rows));
+					cv::resize(bbdd, bbdd, cv::Size(2 * tmpFrameOriginal.cols, 0.33 * tmpFrameOriginal.rows));
+
+
+					cv::Mat sdgraph(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
+					cv::cvtColor(sdgraph, sdgrphlayout, cv::COLOR_BGR2BGRA);
+					cv::resize(sdgrphlayout, sdgrphlayout, cv::Size(2 * tmpFrameOriginal.cols, 0.33 * tmpFrameOriginal.rows));
+
 
 					cv::Mat pztgraph(200, 200, CV_8UC3, cv::Scalar(100, 100, 100));
 					cv::cvtColor(pztgraph, ppttzz, cv::COLOR_BGR2BGRA);
-					cv::resize(ppttzz, ppttzz, cv::Size(2 * tmpFrameOriginal.cols, 0.5 * tmpFrameOriginal.rows));
+					cv::resize(ppttzz, ppttzz, cv::Size(2 * tmpFrameOriginal.cols, 0.33 * tmpFrameOriginal.rows));
 
-					allgraph(bbdd, sdValues, 1, "SD");
+
+					allgraph(bbdd, GetBrightData(), 1, "Bri");
+					allgraph(sdgrphlayout, finalData4graph(), 4, "SD");
 					allgraph(ppttzz, pztVolt, std::stod(pref.getprefString(PZT_KEY)), "PZT");
 
 					if (dep.drawing_box) {
@@ -374,8 +385,9 @@ public:
 					cv::Mat combinedFrame(tmpFrameOriginal.rows * 2, tmpFrameOriginal.cols * 2, tmpFrameOriginal.type());
 					tmpFrameOriginal.copyTo(combinedFrame(cv::Rect(0, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
 					tmpFrameCropped.copyTo(combinedFrame(cv::Rect(tmpFrameOriginal.cols, 0, tmpFrameOriginal.cols, tmpFrameOriginal.rows)));
-					bbdd.copyTo(combinedFrame(cv::Rect(0, tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
-					ppttzz.copyTo(combinedFrame(cv::Rect(0, 1.5 * tmpFrameOriginal.rows, combinedFrame.cols, 0.5 * tmpFrameOriginal.rows)));
+					bbdd.copyTo(combinedFrame(cv::Rect(0, tmpFrameOriginal.rows, combinedFrame.cols, 0.33 * tmpFrameOriginal.rows)));
+					sdgrphlayout.copyTo(combinedFrame(cv::Rect(0, 1.33 * tmpFrameOriginal.rows, combinedFrame.cols, 0.33 * tmpFrameOriginal.rows)));
+					ppttzz.copyTo(combinedFrame(cv::Rect(0, 1.66 * tmpFrameOriginal.rows, combinedFrame.cols, 0.33 * tmpFrameOriginal.rows)));
 
 					if (pref.getprefString(AUTOGRAPH_KEY) == "on" || getDepositionBool()) {
 						csv.saveCSV(brightData, pztVolt, current_filename);
@@ -473,6 +485,7 @@ public:
 			startPoint = endPoint;
 		}
 		cv::putText(frame, cu, cv::Point(10, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 10, 10), 1);
+		cv::putText(frame, pref.getprefString(CURRENT_FILENAME_KEY), cv::Point(width/2, 25), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(255, 10, 10), 1);
 
 	}
 
