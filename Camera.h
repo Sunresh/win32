@@ -8,7 +8,8 @@
 #include "MyUi.h"
 #include "ExportCsv.h"
 #include <opencv2/videoio.hpp>
-
+#include <d2d1.h>
+#include <d2d1helper.h>
 
 class Camera {
 public:
@@ -202,7 +203,7 @@ public:
 		sqw = std::stod(pref.getprefString(SQH_KEY));
 	}
 
-	void Camera::DisplayCameraFrame()
+	void Camera::DisplayCameraFrame(HWND shoo)
 	{
 		try {
 			sqw = std::stod(pref.getprefString(SQW_KEY));
@@ -248,6 +249,7 @@ public:
 
 			cv::VideoWriter videoWriter;
 			bool isRecord = false;
+			bool isEditMode = false;
 			if (pref.getprefString(AUTORECORD_KEY) == "on" || getDepositionBool()) {
 				videoWriter.open(pref.getprefString(CURRENT_FOLDER) + "\\" + pref.getprefString(CURRENT_FILENAME_KEY) + ".mp4", cv::VideoWriter::fourcc('H', '2', '6', '4'), 30.0, cv::Size(2 * (camwidth - 10), 2 * (rowheight - 10)));
 				if (!videoWriter.isOpened()) {
@@ -255,8 +257,10 @@ public:
 					return;
 				}
 			}
-			cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
-			cv::setMouseCallback("ORI", &Camera::mouse_callback, &dep);
+			if (pref.getprefString(EBOXONOFF_KEY) == "on") {
+				cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
+				cv::setMouseCallback("ORI", &Camera::mouse_callback, &dep);
+			}
 			while (getstopCamera()) {
 				uth = std::stod(pref.getprefString(UTH_KEY));
 				lth = std::stod(pref.getprefString(LTH_KEY));
@@ -390,15 +394,23 @@ public:
 					ppttzz.copyTo(combinedFrame(cv::Rect(0, 1.66 * tmpFrameOriginal.rows, combinedFrame.cols, 0.33 * tmpFrameOriginal.rows)));
 
 					if (pref.getprefString(AUTOGRAPH_KEY) == "on" || getDepositionBool()) {
-						csv.saveCSV(brightData, pztVolt, current_filename);
+						csv.saveCSV(GetBrightData(),finalData4graph(), pztVolt, current_filename);
 					}
 					if (pref.getprefString(AUTORECORD_KEY) == "on" || getDepositionBool()) {
 						videoWriter.write(combinedFrame);
 					}
+					if (!isEditMode && pref.getprefString(EBOXONOFF_KEY) == "on") {
+						cv::namedWindow("ORI", cv::WINDOW_AUTOSIZE);
+						cv::setMouseCallback("ORI", &Camera::mouse_callback, &dep);
+						isEditMode = true;
+					}
+					if (pref.getprefString(EBOXONOFF_KEY) == "on") {
+						cv::imshow("ORI", combinedFrame);
+						cv::moveWindow("ORI", -10, -10);
+					}
+					
 
-					cv::imshow("ORI", combinedFrame);
-					cv::moveWindow("ORI", -10, -10);
-
+					RenderCombinedFrame(shoo,combinedFrame);
 				}
 				if (cv::waitKey(1) == 'q' || !getstopCamera()) {
 					stopCamera = true;
@@ -577,6 +589,85 @@ public:
 	}
 
 
+	void RenderCombinedFrame(HWND shoo, const cv::Mat& llaaddoo) {
+		// Calculate the stride
+		RECT windowRect;
+		GetClientRect(shoo, &windowRect);
+		int windowWidth = windowRect.right - windowRect.left;
+		int windowHeight = windowRect.bottom - windowRect.top;
+		cv::Mat combinedFrame;
+		cv::resize(llaaddoo, combinedFrame, cv::Size(windowWidth, windowHeight));
+
+		int stride = combinedFrame.cols * combinedFrame.channels();
+
+		// Get the size of the window
+		
+
+		// Calculate the aspect ratio of the combined frame
+		double frameAspectRatio = static_cast<double>(combinedFrame.cols) / combinedFrame.rows;
+
+		// Calculate the target size of the combined frame while preserving its aspect ratio
+		int targetWidth, targetHeight;
+		if (windowWidth / frameAspectRatio <= windowHeight) {
+			// Fit by width
+			targetWidth = windowWidth;
+			targetHeight = static_cast<int>(windowWidth / frameAspectRatio);
+		}
+		else {
+			// Fit by height
+			targetHeight = windowHeight;
+			targetWidth = static_cast<int>(windowHeight * frameAspectRatio);
+		}
+
+		// Initialize Direct2D
+		ID2D1Factory* pD2DFactory = NULL;
+		HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &pD2DFactory);
+
+		if (SUCCEEDED(hr)) {
+			// Create a render target
+			ID2D1HwndRenderTarget* pRT = NULL;
+			hr = pD2DFactory->CreateHwndRenderTarget(
+				D2D1::RenderTargetProperties(),
+				D2D1::HwndRenderTargetProperties(shoo, D2D1::SizeU(windowWidth, windowHeight)),
+				&pRT
+			);
+
+			if (SUCCEEDED(hr)) {
+				// Create bitmap properties
+				D2D1_BITMAP_PROPERTIES bmpProperties;
+				bmpProperties.pixelFormat.format = DXGI_FORMAT_B8G8R8A8_UNORM;
+				bmpProperties.pixelFormat.alphaMode = D2D1_ALPHA_MODE_IGNORE;
+				bmpProperties.dpiX = 96.0f;
+				bmpProperties.dpiY = 96.0f;
+
+				// Create a bitmap
+				ID2D1Bitmap* pBitmap = NULL;
+				hr = pRT->CreateBitmap(
+					D2D1::SizeU(targetWidth, targetHeight),
+					combinedFrame.data,
+					stride,
+					&bmpProperties,
+					&pBitmap
+				);
+
+				if (SUCCEEDED(hr)) {
+					// Draw the bitmap within the render target
+					pRT->BeginDraw();
+					pRT->DrawBitmap(pBitmap, D2D1::RectF(0, 0, windowWidth, windowHeight));
+					pRT->EndDraw();
+
+					// Release bitmap
+					pBitmap->Release();
+				}
+
+				// Release render target
+				pRT->Release();
+			}
+
+			// Release Direct2D factory
+			pD2DFactory->Release();
+		}
+	}
 
 
 };

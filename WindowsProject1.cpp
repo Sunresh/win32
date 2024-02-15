@@ -157,14 +157,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
 			case ID_BTN_CAMERA_ON: {
 				PreferenceManager pref;
-				if (pref.SetPreference(CURRENT_FILENAME_KEY, myUIInstance.yymmdd_hhmmss())) {
-					camPtr = std::make_unique<Camera>();
-					camPtr->DisplayCameraFrame();
+				if (pref.getprefString(CameraONoFF) == "OFF") {
+					pref.SetPreference(CameraONoFF, "ON");
+					if (pref.SetPreference(CURRENT_FILENAME_KEY, myUIInstance.yymmdd_hhmmss())) {
+						camPtr = std::make_unique<Camera>();
+						camPtr->DisplayCameraFrame(myUIInstance.getCamCam());
+					}
 				}
+				
 				break;
 			}
 			case ID_BTN_CAMERA_OFF: {
-				camPtr->setStopCamera(FALSE);
+				if (pref.getprefString(CameraONoFF) == "ON") {
+					pref.SetPreference(CameraONoFF, "OFF");
+					camPtr->setStopCamera(FALSE);
+				}
 				break;
 			}
 			case ID_BTN_LASER_ON:
@@ -196,7 +203,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 			case ID_BTN_DEPOSITION_ON:
 			{
-				camPtr->setDepositionBool(TRUE);
+				if (pref.SetPreference(CURRENT_FILENAME_KEY, myUIInstance.yymmdd_hhmmss())) {
+					camPtr->setDepositionBool(TRUE);
+				}				
 			}
 			break;
 			case ID_BTN_DEPOSITION_OFF:
@@ -287,6 +296,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				(pref.getprefString(ADORDIFF_KEY) == "on") ? pref.SetPreference(ADORDIFF_KEY, "off") : pref.SetPreference(ADORDIFF_KEY, "on");
 			}
 			break;
+			case TGL_BTN_RBOX:
+			{
+				(pref.getprefString(EBOXONOFF_KEY) == "on") ? pref.SetPreference(EBOXONOFF_KEY, "off") : pref.SetPreference(EBOXONOFF_KEY, "on");
+			}
+			break;
 
 			case ID_CAMERA_OPTION:
 				DialogBox(hInst, MAKEINTRESOURCE(IDD_CAMERA_OPTIONS), hWnd, myUIInstance.CameraOptions);
@@ -310,11 +324,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	break;
 
-	case WM_DESTROY:
+	case WM_DESTROY: {
+		pref.SetPreference(CameraONoFF, "OFF");
 		if (camPtr) {
 			camPtr->setStopCamera(FALSE); // Stop the camera
 		}
-        PostQuitMessage(0);
+		PostQuitMessage(0);
+	}
         break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);

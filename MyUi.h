@@ -11,8 +11,8 @@ public:
 	HWND hCombo;
 	HWND btnUth,btnLth,btnPZT,btnSQH,btnSQW,btnSQX,btnSQY,btnTIME;
 	HWND txtBD, txtEVOLT,txtPZT,txtTIME,txtUTH,txtLTH, btnCAMINDEX, btnMSQX1, btnMSQY1, btnMSQX2, btnMSQY2;
-	HWND hFrame;
-	HWND boolgraph, boolrecord, sdordiff;
+	HWND hFrame,camcam;
+
 	std::string onoff;
 	PreferenceManager* pref = nullptr;
 
@@ -26,10 +26,13 @@ public:
 		return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | style, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
 	}
 
-	static HWND MyUI::CtBtn(const wchar_t* text, int x, int y, int btw, int bth, HWND parent, int id)
+	static HWND MyUI::CtBtn(const wchar_t* text, int x, int y, int btw, int bth, HWND parent, int id, std::string key)
 	{
+		PreferenceManager* pref;
+		HWND boolrecord = CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
+		SendMessage(boolrecord, pref->getprefString(key) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(key) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
 		// Use BS_AUTOCHECKBOX style for toggle button
-		return CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
+		return boolrecord;
 	}
 
 
@@ -96,11 +99,12 @@ public:
 		const int w = std::round(0.50 * GetSystemMetrics(SM_CXSCREEN));
 		const int h = std::round(0.85 * GetSystemMetrics(SM_CYSCREEN));
 
-		const int btw = std::round(0.1 * GetSystemMetrics(SM_CXSCREEN));
+		const int btw = std::round(0.08 * GetSystemMetrics(SM_CXSCREEN));
 		const int bth = std::round(0.05 * GetSystemMetrics(SM_CYSCREEN));
 		const int btspace = bth + 2;
 		const int row2 = btw + 2;
 		const int row3 = 2 * btw + 4;
+		const int row4 = 3 * btw + 8;
 
 		const int rowheight = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN));
 
@@ -113,11 +117,12 @@ public:
 		CreateButton(L"Deposition OFF", 0, 5 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
 		hCombo = CreateButton(L"Setting", 0, 6 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
 		CreateButton(L"EPV0", 0, 7 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
-		CreateButton(L"PZTV0", 0, 9 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
+		CreateButton(L"PZTV0", 0, 8 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
+		CtBtn(L"EBOX", 0, 9 * btspace, btw, bth, hFrame, TGL_BTN_RBOX, EBOXONOFF_KEY);
 
 		// Ensure that the parent window (hFrame) has the necessary size to accommodate the ListView control
 
-		HWND hListView = CreateListView(0, 10 * btspace, 2*btw, 2*bth, hFrame);
+		/*HWND hListView = CreateListView(0, 10 * btspace, 2 * btw, 2 * bth, hFrame);
 
 		// Add columns
 		LVCOLUMN col{};
@@ -144,49 +149,21 @@ public:
 		ListView_InsertItem(hListView, &item);
 
 		ListView_SetItemText(hListView, 1, 1, "30"); // Set subitem text directly
-
+		*/
 
 		txtEVOLT = CreateStaticText(L"E.Volt:", row2, 0 * btspace, btw, bth, hFrame, NULL);
 		loadPref(txtEVOLT, EPV_KEY);
 		txtPZT = CreateStaticText(L"PZT volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
 		loadPref(txtPZT, PZT_KEY);
 
-		boolgraph = CtBtn(L"Auto-Graph", row2, 2 * btspace, btw, bth, hFrame, TGL_BTN_GRAPH);
-		if (boolgraph) {
-			SendMessage(boolgraph, pref->getprefString(AUTOGRAPH_KEY) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(AUTOGRAPH_KEY) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
-		}
+		CtBtn(L"Auto-Graph", row2, 2 * btspace, btw, bth, hFrame, TGL_BTN_GRAPH, AUTOGRAPH_KEY);
 
-		/*
-		boolgraph = CtBtn(L"Auto-Graph",row2,2*btspace,btw,bth,hFrame, TGL_BTN_GRAPH);
-		if (boolgraph != NULL) {
-			isAutograph = SendMessage(boolgraph, BM_GETCHECK, 0, 0);
-			if (pref->getprefString(AUTOGRAPH_KEY)== "on") {
-				SendMessage(boolgraph, BM_SETCHECK, BST_CHECKED, 0);
-			}
-			else {
-				SendMessage(boolgraph, BM_SETCHECK, BST_UNCHECKED, 0);
-			}
-		}*/
-
-
-		btnMSQX1 = InputSaveButton(L"0", row2, 3 * btspace, btw, bth, L"MSQX1", hFrame, INPUT_MSQX1, BTN_MSQX1, NULL);
-		loadPrefv(btnMSQX1, MSQX1_KEY);
-		btnMSQY1 = InputSaveButton(L"0", row2, 4 * btspace, btw, bth, L"MSQY1", hFrame, INPUT_MSQY1, BTN_MSQY1, NULL);
-		loadPrefv(btnMSQY1, MSQY1_KEY);
-		btnMSQX2 = InputSaveButton(L"0", row2, 5 * btspace, btw, bth, L"MSQX2", hFrame, INPUT_MSQX2, BTN_MSQX2, NULL);
-		loadPrefv(btnMSQX2, MSQX2_KEY);
-		btnMSQY2 = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"MSQY2", hFrame, INPUT_MSQY2, BTN_MSQY2, NULL);
-		loadPrefv(btnMSQY2, MSQY2_KEY);
-		boolrecord = CtBtn(L"Auto-REcord", row2, 7 * btspace, btw, bth, hFrame, TGL_BTN_RECORD);
-		if (boolrecord) {
-			SendMessage(boolrecord, pref->getprefString(AUTORECORD_KEY) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(AUTORECORD_KEY) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
-		}
-		sdordiff = CtBtn(L"SD-DIFF", row2, 9 * btspace, btw, bth, hFrame, TGL_BTN_SDORDIFF);
-		if (sdordiff) {
-			SendMessage(sdordiff, pref->getprefString(ADORDIFF_KEY) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(ADORDIFF_KEY) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
-		}
-
-		//hwndPP = CreateStaticText(L"Lower Th.:", 2, 16 * btspace, btw, bth, hFrame, IDC_PPZZ);
+		btnMSQX1 = InputSaveButton(L"0", row2, 3 * btspace, btw, bth, L"X1", hFrame, INPUT_MSQX1, BTN_MSQX1, NULL);loadPrefv(btnMSQX1, MSQX1_KEY);
+		btnMSQY1 = InputSaveButton(L"0", row2, 4 * btspace, btw, bth, L"Y1", hFrame, INPUT_MSQY1, BTN_MSQY1, NULL);loadPrefv(btnMSQY1, MSQY1_KEY);
+		btnMSQX2 = InputSaveButton(L"0", row2, 5 * btspace, btw, bth, L"X2", hFrame, INPUT_MSQX2, BTN_MSQX2, NULL);loadPrefv(btnMSQX2, MSQX2_KEY);
+		btnMSQY2 = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"Y2", hFrame, INPUT_MSQY2, BTN_MSQY2, NULL);loadPrefv(btnMSQY2, MSQY2_KEY);
+		CtBtn(L"Auto-REcord", row2, 7 * btspace, btw, bth, hFrame, TGL_BTN_RECORD, AUTORECORD_KEY);
+		CtBtn(L"SD-DIFF", row2, 8 * btspace, btw, bth, hFrame, TGL_BTN_SDORDIFF, ADORDIFF_KEY);
 
 		btnUth = InputSaveButton(L"0", row3, 0 * btspace, btw, bth, L"Uth", hFrame, INPUT_UTH, BTN_UTH, NULL);
 		loadPrefv(btnUth, UTH_KEY);
@@ -198,13 +175,13 @@ public:
 		loadPrefv(btnSQH, SQH_KEY);
 		btnSQW = InputSaveButton(L"0", row3, 4 * btspace, btw, bth, L"SW", hFrame, INPUT_SQW, BTN_SQW, NULL);
 		loadPrefv(btnSQW, SQW_KEY);
-		btnSQX = InputSaveButton(L"0", row3, 5 * btspace, btw, bth, L"SX", hFrame, INPUT_SQX, BTN_SQX, NULL);
+		btnSQX = InputSaveButton(L"0", row3, 5 * btspace, btw, bth, L"x1", hFrame, INPUT_SQX, BTN_SQX, NULL);
 		loadPrefv(btnSQX, SQX1_KEY);
-		btnSQY = InputSaveButton(L"0", row3, 6 * btspace, btw, bth, L"SY", hFrame, INPUT_SQY, BTN_SQY, NULL);
+		btnSQY = InputSaveButton(L"0", row3, 6 * btspace, btw, bth, L"y1", hFrame, INPUT_SQY, BTN_SQY, NULL);
 		loadPrefv(btnSQY, SQY1_KEY);
 		btnTIME = InputSaveButton(L"0", row3, 7 * btspace, btw, bth, L"Time", hFrame, INPUT_TIME, BTN_TIME, NULL);
 		loadPrefv(btnTIME, TIME_KEY);
-		btnCAMINDEX = InputSaveButton(L"0", 0, 8 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
+		btnCAMINDEX = InputSaveButton(L"0", 0, 11 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
 		loadPrefv(btnCAMINDEX, CameraIndex);
 
 		//check folder and create if not allout\20240305 folder inside folder
@@ -214,6 +191,7 @@ public:
 		if (pref.CheckAndCreateFolder(folderName, ddaa) && pref.CheckAndCreateVideoFolder(folderName, ddaa)) {
 			///
 		}
+		camcam = CreateButton(L"Menu", row4, 0, 3 * btw, 9 * bth, hWnd, NULL, BS_GROUPBOX);
 
 		return hFrame;
 	}
@@ -258,6 +236,9 @@ public:
 
 	HWND MyUI::getTxtBD() const {
 		return txtBD;
+	}
+	HWND MyUI::getCamCam() const {
+		return camcam;
 	}
 	HWND MyUI::getTxtUth() const {
 		return txtUTH;

@@ -57,6 +57,7 @@
 #define TGL_BTN_GRAPH	1040
 #define TGL_BTN_RECORD	1041
 #define TGL_BTN_SDORDIFF	1042
+#define TGL_BTN_RBOX	1043
 
 //setting ids
 
@@ -101,12 +102,14 @@
 #define AUTOGRAPH_KEY "AutoGraphkey"
 #define AUTORECORD_KEY "AutoRECORDkey"
 #define ADORDIFF_KEY "SDorDIFFkey"
+#define EBOXONOFF_KEY "EditBoxSizekey"
 #define SHUTTER_KEY "SHUTTERkey"
 #define CURRENT_FILENAME_KEY "Thisisfilename"
 #define CURRENT_DAY_KEY "TodaysDate"
 #define CURRENT_FOLDER "MYfolder"
 #define CURRENT_VIDEO_FOLDER "MYvideoFolder"
 #define CameraIndex     "CameraIndex"
+#define CameraONoFF     "CameraONoFF"
 #define WM_USER_UPDATE (WM_USER + 1)
 
 

@@ -15,7 +15,7 @@ add_executable(YourProjectName WIN32
 			"targetver.h"  "ExportCsv.h" "daq.h" "BrightnessCalculation.h" "preferencemanager.h" "Camera.h" "ScreenRecord.h" "MyUi.h" "ScreenRecord.cpp")
 
 link_directories("C:/opencv/build/x64/v16/lib")
-target_link_libraries(${PROJECT_NAME} PRIVATE comctl32.lib ${OpenCV_LIBS} ${NIDAQmx_LIBRARY} Shlwapi.lib)
+target_link_libraries(${PROJECT_NAME} PRIVATE comctl32.lib ${OpenCV_LIBS} ${NIDAQmx_LIBRARY} Shlwapi.lib d2d1.lib)
 target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCV_INCLUDE_DIRS})
 
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
