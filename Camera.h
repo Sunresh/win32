@@ -95,9 +95,6 @@ public:
 		return epv;
 	}
 
-	double Camera::feedbackSD() {
-		return 10*stdev(getBrightness());
-	}
 
 
 	void Camera::drawRectangle(cv::Mat& frame, int x1, int y1, int x2, int y2, const cv::Scalar& color, int thickness = 1) {
@@ -165,30 +162,19 @@ public:
 	std::deque<double>& Camera::finalData4graph() {
 		return sdValues;
 	}
-	std::deque<double>& Camera::GetSD() {
-		return sdValues;
+	double Camera::feedbackSD() {
+		if (pref.getprefString(ADORDIFF_KEY) == "on") {
+			return delta(getBrightness());
+		}
+		else {
+			return 10 * stdev(getBrightness());
+		}
 	}
+
 	void Camera::setBrightness(cv::Mat& tmpcalcFrame) {
 		double averageBrightness, diff, norm, sizze;
 		my.differencesOf(tmpcalcFrame, averageBrightness, diff, norm, sizze);
 		brightness = averageBrightness;
-	
-		/*std::string val = std::to_string(averageBrightness);
-		std::wstring wideValue(val.begin(), val.end());
-		std::string valu = std::to_string(averageBrightness);
-		std::wstring wideVa(valu.begin(), valu.end());
-		OutputDebugStringW(L"\n");
-		OutputDebugStringW(wideValue.c_str());
-		OutputDebugStringW(L"\n\n");
-		OutputDebugStringW(wideVa.c_str());
-		OutputDebugStringW(L"\n");
-		if (pref.getprefString(ADORDIFF_KEY) == "on") {
-			//brightness = 100*stdev(averageBrightness); setUpperlimit(10);
-			brightness = delta(norm); setUpperlimit(50);
-		}
-		else {
-			brightness = delta(diff); setUpperlimit(1700);
-		}*/
 	}
 	const double Camera::getBrightness() {
 		return brightness;
@@ -286,15 +272,16 @@ public:
 					cv::cvtColor(croppedFrame, tmpFrameCropped, cv::COLOR_BGR2BGRA);
 					cv::resize(tmpFrameCropped, tmpFrameCropped, cv::Size(camwidth - 10, rowheight - 10));
 
-
 					drawRectangle(tmpFrameCropped, sqx1, sqy1, sqx1 + sqw, sqy1 + sqh, cv::Scalar(255, 0, 255), 1);
 					cv::Mat calcFrame = tmpFrameCropped(cv::Rect(sqx1, sqy1, sqw, sqh));
 					cv::cvtColor(calcFrame, tmpcalcFrame, cv::COLOR_BGR2BGRA);
+
+
 					setBrightness(tmpcalcFrame);
 					brightData.push_back(getBrightness());
 					sdValues.push_back(feedbackSD());
 					SchmittTrigger naresh(uth, lth);
-					bool output = naresh.processInput(getBrightness());
+					bool output = naresh.processInput(feedbackSD());
 
 					if (getDepositionBool()) {
 						if (stage < (0.04 * pztmax) && !isBasecomplte) {//Making Base
@@ -405,8 +392,10 @@ public:
 						isEditMode = true;
 					}
 					if (pref.getprefString(EBOXONOFF_KEY) == "on") {
-						cv::imshow("ORI", combinedFrame);
-						cv::moveWindow("ORI", -10, -10);
+						showWindow("ORI", combinedFrame);
+					}
+					else {
+						hideWindow("ORI");
 					}
 					
 
@@ -429,6 +418,18 @@ public:
 		catch (...) {
 			myUIInstance.mess(L"Unknown error occurred.");
 		}
+	}
+	void hideWindow(const std::string& winName) {
+		cv::namedWindow(winName, cv::WINDOW_AUTOSIZE);
+		cv::setWindowProperty(winName, cv::WND_PROP_AUTOSIZE, cv::WINDOW_NORMAL);
+		cv::setWindowProperty(winName, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+		cv::setWindowProperty(winName, cv::WND_PROP_VISIBLE, cv::WINDOW_FULLSCREEN);
+		cv::resizeWindow(winName, 1, 1);
+	}
+	void showWindow(const std::string& winName, cv::Mat& dframe) {
+		cv::imshow(winName, dframe);
+		cv::setWindowProperty(winName, cv::WND_PROP_AUTOSIZE, cv::WINDOW_AUTOSIZE);
+		cv::moveWindow(winName, -10, -10);
 	}
 
 	static void Camera::mouse_callback(int event, int x, int y, int flags, void* param) {
@@ -505,7 +506,7 @@ public:
 	double Camera::delta(double contrast) {
 		static std::deque<double> contrastValues; // Static to retain values between function calls
 		double sum = 0;
-		int expectedSize = 300;
+		int expectedSize = 30;
 
 		contrastValues.push_back(contrast);
 		while (contrastValues.size() > expectedSize) {
@@ -528,66 +529,28 @@ public:
 
 
 	double Camera::stdev(double contrast) {
-		static std::deque<double> contrastValues; // Static to retain values between function calls
+		static std::deque<double> contrastValues;
 		double sum = 0;
 		int expectedSize = 30;
 		contrastValues.push_back(contrast);
 
-		// If we have more than the expected number of values, remove the oldest ones
 		while (contrastValues.size() > expectedSize) {
 			contrastValues.pop_front();
 		}
-
 		int countLastN = contrastValues.size();
-
-		// Calculate the sum of the contrast values
 		for (double val : contrastValues) {
 			sum += val;
 		}
-
 		double mean = (countLastN > 0) ? (sum / countLastN) : 0.0;
 		double variance = 0.0;
-
-		// Calculate the variance
 		for (double val : contrastValues) {
 			variance += std::pow(val - mean, 2);
 		}
 		variance /= countLastN;
-
-		// Calculate the standard deviation
 		double stdev = std::sqrt(variance);
 
 		return stdev;
 	}
-
-	double Camera::stdevu(std::deque<double> pixData) {
-		int size = pixData.size();
-		double bright = 0, sum = 0;
-		double vari = 0;
-		int countLastFive = 0;
-		double variance = 0.0;
-		double mean = 0;
-		int expectedsize = 25;
-		if (pixData.empty()) {
-			return 0.0;
-		}
-		for (int i = size - expectedsize; i < size; ++i) {
-			if (i >= 0) {
-				sum += pixData[i];
-				++countLastFive;
-			}
-		}
-		mean = (countLastFive > 0) ? (sum / countLastFive) : 0.0;
-		for (int i = size - expectedsize; i < size; ++i) {
-			if (i >= 0) {
-				variance += std::pow(pixData[i] - mean, 2);
-			}
-		}
-		variance /= (countLastFive);
-		bright = std::sqrt(variance);
-		return bright;
-	}
-
 
 	void RenderCombinedFrame(HWND shoo, const cv::Mat& llaaddoo) {
 		// Calculate the stride

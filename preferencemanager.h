@@ -159,7 +159,12 @@ public:
 
         return true;
     }
-
+    void debug(std::string val) {
+        std::wstring wideVa(val.begin(), val.end());
+        OutputDebugStringW(L"\n");
+        OutputDebugStringW(wideVa.c_str());
+        OutputDebugStringW(L"\n");
+    }
 
 };
 

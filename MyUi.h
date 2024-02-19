@@ -28,9 +28,9 @@ public:
 
 	static HWND MyUI::CtBtn(const wchar_t* text, int x, int y, int btw, int bth, HWND parent, int id, std::string key)
 	{
-		PreferenceManager* pref;
+		PreferenceManager pref;
 		HWND boolrecord = CreateWindowW(L"BUTTON", text, WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, x, y, btw, bth, parent, (HMENU)id, NULL, NULL);
-		SendMessage(boolrecord, pref->getprefString(key) == "on" ? BM_SETCHECK : BM_SETCHECK, pref->getprefString(key) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
+		SendMessage(boolrecord, pref.getprefString(key) == "on" ? BM_SETCHECK : BM_SETCHECK, pref.getprefString(key) == "on" ? BST_CHECKED : BST_UNCHECKED, 0);
 		// Use BS_AUTOCHECKBOX style for toggle button
 		return boolrecord;
 	}
