@@ -97,10 +97,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    hInst = hInstance;
    const int x = std::round(0.50 * GetSystemMetrics(SM_CXSCREEN));
    const int y = std::round(0.10 * GetSystemMetrics(SM_CYSCREEN));
-   const int w = std::round(0.50 * GetSystemMetrics(SM_CXSCREEN));
+   const int w = std::round(0.90 * GetSystemMetrics(SM_CXSCREEN));
    const int h = std::round(0.85 * GetSystemMetrics(SM_CYSCREEN));
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, x,y, w, h, nullptr, nullptr, hInstance, nullptr);
+   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, 0,y, w, h, nullptr, nullptr, hInstance, nullptr);
    if (!hWnd)
    {
       return FALSE;

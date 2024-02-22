@@ -395,7 +395,7 @@ public:
 						showWindow("ORI", combinedFrame);
 					}
 					else {
-						hideWindow("ORI");
+						hideWindow("ORI", combinedFrame);
 					}
 					
 
@@ -419,17 +419,21 @@ public:
 			myUIInstance.mess(L"Unknown error occurred.");
 		}
 	}
-	void hideWindow(const std::string& winName) {
-		cv::namedWindow(winName, cv::WINDOW_AUTOSIZE);
-		cv::setWindowProperty(winName, cv::WND_PROP_AUTOSIZE, cv::WINDOW_NORMAL);
-		cv::setWindowProperty(winName, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
-		cv::setWindowProperty(winName, cv::WND_PROP_VISIBLE, cv::WINDOW_FULLSCREEN);
-		cv::resizeWindow(winName, 0, 0);
+	void hideWindow(const std::string& winName, cv::Mat& dframe) {
+		cv::imshow(winName, dframe);
+		HWND hwnd = FindWindow(NULL, winName.c_str());
+		if (hwnd != NULL) {
+			ShowWindow(hwnd, SW_MINIMIZE);
+		}
 	}
 	void showWindow(const std::string& winName, cv::Mat& dframe) {
 		cv::imshow(winName, dframe);
 		cv::setWindowProperty(winName, cv::WND_PROP_AUTOSIZE, cv::WINDOW_AUTOSIZE);
-		cv::moveWindow(winName, -10, -10);
+		cv::moveWindow(winName, dframe.rows, -10);
+		HWND hwnd = FindWindow(NULL, winName.c_str());
+		if (hwnd != NULL) {
+			ShowWindow(hwnd, SW_SHOWDEFAULT);
+		}
 	}
 
 	static void Camera::mouse_callback(int event, int x, int y, int flags, void* param) {

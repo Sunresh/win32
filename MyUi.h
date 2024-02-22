@@ -170,7 +170,7 @@ public:
 		loadPrefv(btnTIME, TIME_KEY);
 		CtBtn(L"SD-DIFF", row2, 8 * btspace, btw, bth, hFrame, TGL_BTN_SDORDIFF, ADORDIFF_KEY);
 
-		btnCAMINDEX = InputSaveButton(L"0", 0, 11 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
+		btnCAMINDEX = InputSaveButton(L"0", 0, 13 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
 		loadPrefv(btnCAMINDEX, CameraIndex);
 
 		//check folder and create if not allout\20240305 folder inside folder
@@ -180,7 +180,7 @@ public:
 		if (pref.CheckAndCreateFolder(folderName, ddaa) && pref.CheckAndCreateVideoFolder(folderName, ddaa)) {
 			///
 		}
-		camcam = CreateButton(L"Menu", row3, 0, 4 * btw, 10 * bth, hWnd, NULL, BS_GROUPBOX);
+		camcam = CreateButton(L"Menu", row3, 0, 6 * btw, 14 * bth, hWnd, NULL, BS_GROUPBOX);
 
 		return hFrame;
 	}
