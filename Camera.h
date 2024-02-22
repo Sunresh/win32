@@ -424,7 +424,7 @@ public:
 		cv::setWindowProperty(winName, cv::WND_PROP_AUTOSIZE, cv::WINDOW_NORMAL);
 		cv::setWindowProperty(winName, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 		cv::setWindowProperty(winName, cv::WND_PROP_VISIBLE, cv::WINDOW_FULLSCREEN);
-		cv::resizeWindow(winName, 1, 1);
+		cv::resizeWindow(winName, 0, 0);
 	}
 	void showWindow(const std::string& winName, cv::Mat& dframe) {
 		cv::imshow(winName, dframe);

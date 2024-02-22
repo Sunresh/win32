@@ -158,29 +158,18 @@ public:
 
 		CtBtn(L"Auto-Graph", row2, 2 * btspace, btw, bth, hFrame, TGL_BTN_GRAPH, AUTOGRAPH_KEY);
 
-		btnMSQX1 = InputSaveButton(L"0", row2, 3 * btspace, btw, bth, L"X1", hFrame, INPUT_MSQX1, BTN_MSQX1, NULL);loadPrefv(btnMSQX1, MSQX1_KEY);
-		btnMSQY1 = InputSaveButton(L"0", row2, 4 * btspace, btw, bth, L"Y1", hFrame, INPUT_MSQY1, BTN_MSQY1, NULL);loadPrefv(btnMSQY1, MSQY1_KEY);
-		btnMSQX2 = InputSaveButton(L"0", row2, 5 * btspace, btw, bth, L"X2", hFrame, INPUT_MSQX2, BTN_MSQX2, NULL);loadPrefv(btnMSQX2, MSQX2_KEY);
-		btnMSQY2 = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"Y2", hFrame, INPUT_MSQY2, BTN_MSQY2, NULL);loadPrefv(btnMSQY2, MSQY2_KEY);
-		CtBtn(L"Auto-REcord", row2, 7 * btspace, btw, bth, hFrame, TGL_BTN_RECORD, AUTORECORD_KEY);
+		CtBtn(L"Auto-REcord", row2, 3 * btspace, btw, bth, hFrame, TGL_BTN_RECORD, AUTORECORD_KEY);
+		
+		btnUth = InputSaveButton(L"0", row2, 4 * btspace, btw, bth, L"Uth", hFrame, INPUT_UTH, BTN_UTH, NULL);
+		loadPrefv(btnUth, UTH_KEY);
+		btnLth = InputSaveButton(L"0", row2, 5 * btspace, btw, bth, L"Lth", hFrame, INPUT_LTH, BTN_LTH, NULL);
+		loadPrefv(btnLth, LTH_KEY);
+		btnPZT = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"PZT", hFrame, INPUT_PZT, BTN_PZT, NULL);
+		loadPrefv(btnPZT, PZT_KEY);
+		btnTIME = InputSaveButton(L"0", row2, 7 * btspace, btw, bth, L"Time", hFrame, INPUT_TIME, BTN_TIME, NULL);
+		loadPrefv(btnTIME, TIME_KEY);
 		CtBtn(L"SD-DIFF", row2, 8 * btspace, btw, bth, hFrame, TGL_BTN_SDORDIFF, ADORDIFF_KEY);
 
-		btnUth = InputSaveButton(L"0", row3, 0 * btspace, btw, bth, L"Uth", hFrame, INPUT_UTH, BTN_UTH, NULL);
-		loadPrefv(btnUth, UTH_KEY);
-		btnLth = InputSaveButton(L"0", row3, 1 * btspace, btw, bth, L"Lth", hFrame, INPUT_LTH, BTN_LTH, NULL);
-		loadPrefv(btnLth, LTH_KEY);
-		btnPZT = InputSaveButton(L"0", row3, 2 * btspace, btw, bth, L"PZT", hFrame, INPUT_PZT, BTN_PZT, NULL);
-		loadPrefv(btnPZT, PZT_KEY);
-		btnSQH = InputSaveButton(L"0", row3, 3 * btspace, btw, bth, L"SH", hFrame, INPUT_SQH, BTN_SQH, NULL);
-		loadPrefv(btnSQH, SQH_KEY);
-		btnSQW = InputSaveButton(L"0", row3, 4 * btspace, btw, bth, L"SW", hFrame, INPUT_SQW, BTN_SQW, NULL);
-		loadPrefv(btnSQW, SQW_KEY);
-		btnSQX = InputSaveButton(L"0", row3, 5 * btspace, btw, bth, L"x1", hFrame, INPUT_SQX, BTN_SQX, NULL);
-		loadPrefv(btnSQX, SQX1_KEY);
-		btnSQY = InputSaveButton(L"0", row3, 6 * btspace, btw, bth, L"y1", hFrame, INPUT_SQY, BTN_SQY, NULL);
-		loadPrefv(btnSQY, SQY1_KEY);
-		btnTIME = InputSaveButton(L"0", row3, 7 * btspace, btw, bth, L"Time", hFrame, INPUT_TIME, BTN_TIME, NULL);
-		loadPrefv(btnTIME, TIME_KEY);
 		btnCAMINDEX = InputSaveButton(L"0", 0, 11 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
 		loadPrefv(btnCAMINDEX, CameraIndex);
 
@@ -191,7 +180,7 @@ public:
 		if (pref.CheckAndCreateFolder(folderName, ddaa) && pref.CheckAndCreateVideoFolder(folderName, ddaa)) {
 			///
 		}
-		camcam = CreateButton(L"Menu", row4, 0, 3 * btw, 9 * bth, hWnd, NULL, BS_GROUPBOX);
+		camcam = CreateButton(L"Menu", row3, 0, 4 * btw, 10 * bth, hWnd, NULL, BS_GROUPBOX);
 
 		return hFrame;
 	}
@@ -306,6 +295,10 @@ public:
 		HWND sqhval = GetDlgItem(hDlg, ST_INP_SQH);
 		HWND sqx1p = GetDlgItem(hDlg, ST_INP_SQX1);
 		HWND sqy1p = GetDlgItem(hDlg, ST_INP_SQY1);
+		HWND sqXX1 = GetDlgItem(hDlg, ST_INP_XX1);
+		HWND sqYY1 = GetDlgItem(hDlg, ST_INP_YY1);
+		HWND sqXX2 = GetDlgItem(hDlg, ST_INP_XX2);
+		HWND sqYY2 = GetDlgItem(hDlg, ST_INP_YY2);
 		HWND path = GetDlgItem(hDlg, ST_INP_CURRENT_PATH);
 
 		switch (message)
@@ -329,6 +322,10 @@ public:
 				loadPrefv(sqhval, SQH_KEY);
 				loadPrefv(sqx1p, SQX1_KEY);
 				loadPrefv(sqy1p, SQY1_KEY);
+				loadPrefv(sqXX1, MSQX1_KEY);
+				loadPrefv(sqYY1, MSQY1_KEY);
+				loadPrefv(sqXX2, MSQX2_KEY);
+				loadPrefv(sqYY2, MSQY2_KEY);
 				loadPrefv(path, CURRENT_FOLDER);
 				break;
 

@@ -83,6 +83,14 @@
 #define ST_INP_CURRENT_PATH 1051
 #define CAM_INDEX_BTN		1052
 #define CAM_INDEX_INPUT		1053
+#define ST_BTN_XX1		1054
+#define ST_INP_XX1		1055
+#define ST_BTN_YY1		1056
+#define ST_INP_YY1		1057
+#define ST_BTN_XX2		1058
+#define ST_INP_XX2		1059
+#define ST_BTN_YY2		1060
+#define ST_INP_YY2		1061
 
 
 
