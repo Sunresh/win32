@@ -162,12 +162,12 @@ public:
 	std::deque<double>& Camera::finalData4graph() {
 		return sdValues;
 	}
-	double Camera::feedbackSD() {
+	double Camera::finalCalculation() {
 		if (pref.getprefString(ADORDIFF_KEY) == "on") {
-			return delta(getBrightness());
+			return 10 * stdev(getBrightness());
 		}
 		else {
-			return 10 * stdev(getBrightness());
+			return delta(getBrightness());
 		}
 	}
 
@@ -279,9 +279,9 @@ public:
 
 					setBrightness(tmpcalcFrame);
 					brightData.push_back(getBrightness());
-					sdValues.push_back(feedbackSD());
+					sdValues.push_back(finalCalculation());
 					SchmittTrigger naresh(uth, lth);
-					bool output = naresh.processInput(feedbackSD());
+					bool output = naresh.processInput(finalCalculation());
 
 					if (getDepositionBool()) {
 						if (stage < (0.04 * pztmax) && !isBasecomplte) {//Making Base
@@ -510,7 +510,7 @@ public:
 	double Camera::delta(double contrast) {
 		static std::deque<double> contrastValues; // Static to retain values between function calls
 		double sum = 0;
-		int expectedSize = 30;
+		int expectedSize = 60;
 
 		contrastValues.push_back(contrast);
 		while (contrastValues.size() > expectedSize) {
@@ -535,7 +535,7 @@ public:
 	double Camera::stdev(double contrast) {
 		static std::deque<double> contrastValues;
 		double sum = 0;
-		int expectedSize = 30;
+		int expectedSize = 60;
 		contrastValues.push_back(contrast);
 
 		while (contrastValues.size() > expectedSize) {
