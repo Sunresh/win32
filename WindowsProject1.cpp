@@ -168,7 +168,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 			case ID_BTN_CAMERA_OFF: {
-				 for (int i = 0; i < 10; ++i) {  // Checking up to 10 camera indexes
+				if (pref.getprefString(CameraONoFF) == "ON") {
+					pref.SetPreference(CameraONoFF, "OFF");
+					camPtr->setStopCamera(FALSE);
+				}
+				break;
+			}
+			case ID_BTN_CAMERA_CAMAC: {
+				 for (int i = 0; i < 30; ++i) {  // Checking up to 10 camera indexes
 						cv::VideoCapture cap(i);
 						if (cap.isOpened()) {
 							std::string ff = std::to_string(i);
@@ -178,10 +185,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							std::cout << "Camera index " << i << " is not available." << std::endl;
 						}
 					}
-				if (pref.getprefString(CameraONoFF) == "ON") {
-					pref.SetPreference(CameraONoFF, "OFF");
-					camPtr->setStopCamera(FALSE);
-				}
 				break;
 			}
 			case ID_BTN_CAMERA_RE: {

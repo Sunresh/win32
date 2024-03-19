@@ -91,7 +91,7 @@
 #define ST_INP_XX2		1059
 #define ST_BTN_YY2		1060
 #define ST_INP_YY2		1061
-
+#define ID_BTN_CAMERA_CAMAC 1062
 
 
 #define UTH_KEY "UpperTHvalue"

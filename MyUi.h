@@ -111,6 +111,7 @@ public:
 		hFrame = CreateButton(L"Menu", 0, 0, w, h, hWnd, NULL, BS_GROUPBOX);
 
 		CreateButton(L"Camera RE", 8*btw, 0, btw, bth, hWnd, ID_BTN_CAMERA_RE);
+		CreateButton(L"CamaC", 8*btw, btspace, btw, bth, hWnd, ID_BTN_CAMERA_CAMAC);
 
 		CreateButton(L"Camera ON", 0, 0, btw, bth, hFrame, ID_BTN_CAMERA_ON);
 		CreateButton(L"Camera OFF", 0, btspace, btw, bth, hFrame, ID_BTN_CAMERA_OFF);
