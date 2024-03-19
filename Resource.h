@@ -96,8 +96,8 @@
 
 #define UTH_KEY "UpperTHvalue"
 #define LTH_KEY "LowerTHvalue"
-#define PZT_KEY "PZTMaxValue"
-#define EPV_KEY "ElectrophoreticVoltage"
+#define PZT_KEY "PZTV"
+#define EPV_KEY "EPV"
 #define TIME_KEY "TimeOfDeposition"
 #define SQW_KEY "SquareWidth"
 #define SQH_KEY "SquareHeight"
@@ -130,6 +130,7 @@
 #define ID_BTN_EPDV0 138
 #define ID_BTN_PZTV0 139 
 #define IDC_PPZZ 140
+#define ID_BTN_CAMERA_RE 141
 
 
 #define IDC_MYICON				2

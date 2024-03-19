@@ -284,23 +284,24 @@ public:
 					bool output = naresh.processInput(finalCalculation());
 
 					if (getDepositionBool()) {
-						if (stage < (0.04 * pztmax) && !isBasecomplte) {//Making Base
-							stage += (0.25 * pztmax / time);
-						}
-						if (stage > (0.04 * pztmax)) {//after completing base
-							isBasecomplte = TRUE;
-						}
+
+						// if (stage < (0.04 * pztmax) && !isBasecomplte) {//Making Base
+						// 	stage += (0.25 * pztmax / time);
+						// }
+						// if (stage > (0.04 * pztmax)) {//after completing base
+						// 	isBasecomplte = TRUE;
+						// }
 						if (stage < 0) {
 							stage = 0;
 							timedelay = 0.0;
 						}
-						if (!isRedeposition && output && isWithoutredeposition && isBasecomplte) {//normal deposition
+						if (!isRedeposition && output && isWithoutredeposition){// && isBasecomplte) {//normal deposition
 							stage += pztmax / (time);
 						}
 						if (isRedeposition && output) {// Redeposition
 							stage += (pztmax / (time + timedelay));
 						}
-						if (!output && isBasecomplte) { //stage control to get lost position
+						if (!output){// && isBasecomplte) { //stage control to get lost position
 							timedelay += 1;
 							stage -= pztmax / (time * 0.25);
 							isRedeposition = true;
@@ -403,7 +404,7 @@ public:
 				}
 				if (cv::waitKey(1) == 'q' || !getstopCamera()) {
 					stopCamera = true;
-					cv::destroyWindow("ORI");
+					//cv::destroyWindow("ORI");
 					break;
 				}
 			}

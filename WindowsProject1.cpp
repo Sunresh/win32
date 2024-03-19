@@ -174,6 +174,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			}
+			case ID_BTN_CAMERA_RE: {
+				PreferenceManager pref;
+				if (pref.getprefString(CameraONoFF) == "ON") {
+					camPtr->setStopCamera(FALSE);
+					if (pref.SetPreference(CURRENT_FILENAME_KEY, myUIInstance.yymmdd_hhmmss())) {
+						camPtr = std::make_unique<Camera>();
+						camPtr->DisplayCameraFrame(myUIInstance.getCamCam());
+					}
+				}
+				else if (pref.getprefString(CameraONoFF) == "OFF") {
+					pref.SetPreference(CameraONoFF, "ON");
+					if (pref.SetPreference(CURRENT_FILENAME_KEY, myUIInstance.yymmdd_hhmmss())) {
+						camPtr = std::make_unique<Camera>();
+						camPtr->DisplayCameraFrame(myUIInstance.getCamCam());
+					}
+				}
+				
+				break;
+			}
+
 			case ID_BTN_LASER_ON:
 			{
 				TaskHandle taskHandle;

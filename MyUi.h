@@ -100,7 +100,7 @@ public:
 		const int h = std::round(0.85 * GetSystemMetrics(SM_CYSCREEN));
 
 		const int btw = std::round(0.08 * GetSystemMetrics(SM_CXSCREEN));
-		const int bth = std::round(0.05 * GetSystemMetrics(SM_CYSCREEN));
+		const int bth = std::round(0.04 * GetSystemMetrics(SM_CYSCREEN));
 		const int btspace = bth + 2;
 		const int row2 = btw + 2;
 		const int row3 = 2 * btw + 4;
@@ -109,16 +109,32 @@ public:
 		const int rowheight = std::round(0.45 * GetSystemMetrics(SM_CYSCREEN));
 
 		hFrame = CreateButton(L"Menu", 0, 0, w, h, hWnd, NULL, BS_GROUPBOX);
+
+		CreateButton(L"Camera RE", 8*btw, 0, btw, bth, hWnd, ID_BTN_CAMERA_RE);
+
 		CreateButton(L"Camera ON", 0, 0, btw, bth, hFrame, ID_BTN_CAMERA_ON);
 		CreateButton(L"Camera OFF", 0, btspace, btw, bth, hFrame, ID_BTN_CAMERA_OFF);
 		CreateButton(L"Laser ON", 0, 2 * btspace, btw, bth, hFrame, ID_BTN_LASER_ON);
 		CreateButton(L"Deposition ON", 0, 3 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_ON);
-		CreateButton(L"Dep Pause", 0, 4 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
-		CreateButton(L"Deposition OFF", 0, 5 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
-		hCombo = CreateButton(L"Setting", 0, 6 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
-		CreateButton(L"EPV0", 0, 7 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
-		CreateButton(L"PZTV0", 0, 8 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
-		CtBtn(L"EBOX", 0, 9 * btspace, btw, bth, hFrame, TGL_BTN_RBOX, EBOXONOFF_KEY);
+		CreateButton(L"Dep. OFF", 0, 4 * btspace, btw, bth, hFrame, ID_BTN_DEPOSITION_OFF);
+		hCombo = CreateButton(L"Setting", 0, 5 * btspace, btw, bth, hFrame, ID_CAMERA_OPTION);
+		CreateButton(L"EPV0", 0, 6 * btspace, btw, bth, hFrame, ID_BTN_EPDV0);
+		CreateButton(L"PZTV0", 0, 7 * btspace, btw, bth, hFrame, ID_BTN_PZTV0);
+		CtBtn(L"EBOX", 0, 8 * btspace, btw, bth, hFrame, TGL_BTN_RBOX, EBOXONOFF_KEY);
+
+		CtBtn(L"Auto-Graph", 0, 9 * btspace, btw, bth, hFrame, TGL_BTN_GRAPH, AUTOGRAPH_KEY);
+
+		CtBtn(L"Auto-REcord", 0, 10 * btspace, btw, bth, hFrame, TGL_BTN_RECORD, AUTORECORD_KEY);
+		
+		btnUth = InputSaveButton(L"0", 0, 11 * btspace, btw, bth, L"Uth", hFrame, INPUT_UTH, BTN_UTH, NULL);
+		loadPrefv(btnUth, UTH_KEY);
+		btnLth = InputSaveButton(L"0", 0, 12 * btspace, btw, bth, L"Lth", hFrame, INPUT_LTH, BTN_LTH, NULL);
+		loadPrefv(btnLth, LTH_KEY);
+		btnPZT = InputSaveButton(L"0", 0, 13 * btspace, btw, bth, L"PZT", hFrame, INPUT_PZT, BTN_PZT, NULL);
+		loadPrefv(btnPZT, PZT_KEY);
+		btnTIME = InputSaveButton(L"0", 0, 14 * btspace, btw, bth, L"Time", hFrame, INPUT_TIME, BTN_TIME, NULL);
+		loadPrefv(btnTIME, TIME_KEY);
+		CtBtn(L"SD-DIFF", 0, 15 * btspace, btw, bth, hFrame, TGL_BTN_SDORDIFF, ADORDIFF_KEY);
 
 		// Ensure that the parent window (hFrame) has the necessary size to accommodate the ListView control
 
@@ -151,26 +167,12 @@ public:
 		ListView_SetItemText(hListView, 1, 1, "30"); // Set subitem text directly
 		*/
 
-		txtEVOLT = CreateStaticText(L"E.Volt:", row2, 0 * btspace, btw, bth, hFrame, NULL);
-		loadPref(txtEVOLT, EPV_KEY);
-		txtPZT = CreateStaticText(L"PZT volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
-		loadPref(txtPZT, PZT_KEY);
+		// txtEVOLT = CreateStaticText(L"E.Volt:", row2, 0 * btspace, btw, bth, hFrame, NULL);
+		// loadPref(txtEVOLT, EPV_KEY);
+		// txtPZT = CreateStaticText(L"PZT volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
+		// loadPref(txtPZT, PZT_KEY);
 
-		CtBtn(L"Auto-Graph", row2, 2 * btspace, btw, bth, hFrame, TGL_BTN_GRAPH, AUTOGRAPH_KEY);
-
-		CtBtn(L"Auto-REcord", row2, 3 * btspace, btw, bth, hFrame, TGL_BTN_RECORD, AUTORECORD_KEY);
-		
-		btnUth = InputSaveButton(L"0", row2, 4 * btspace, btw, bth, L"Uth", hFrame, INPUT_UTH, BTN_UTH, NULL);
-		loadPrefv(btnUth, UTH_KEY);
-		btnLth = InputSaveButton(L"0", row2, 5 * btspace, btw, bth, L"Lth", hFrame, INPUT_LTH, BTN_LTH, NULL);
-		loadPrefv(btnLth, LTH_KEY);
-		btnPZT = InputSaveButton(L"0", row2, 6 * btspace, btw, bth, L"PZT", hFrame, INPUT_PZT, BTN_PZT, NULL);
-		loadPrefv(btnPZT, PZT_KEY);
-		btnTIME = InputSaveButton(L"0", row2, 7 * btspace, btw, bth, L"Time", hFrame, INPUT_TIME, BTN_TIME, NULL);
-		loadPrefv(btnTIME, TIME_KEY);
-		CtBtn(L"SD-DIFF", row2, 8 * btspace, btw, bth, hFrame, TGL_BTN_SDORDIFF, ADORDIFF_KEY);
-
-		btnCAMINDEX = InputSaveButton(L"0", 0, 13.5 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
+		btnCAMINDEX = InputSaveButton(L"0", 0, 15 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
 		loadPrefv(btnCAMINDEX, CameraIndex);
 
 		//check folder and create if not allout\20240305 folder inside folder
@@ -180,7 +182,7 @@ public:
 		if (pref.CheckAndCreateFolder(folderName, ddaa) && pref.CheckAndCreateVideoFolder(folderName, ddaa)) {
 			///
 		}
-		camcam = CreateButton(L"Menu", row3, 0, 6 * btw, 14 * bth, hWnd, NULL, BS_GROUPBOX);
+		camcam = CreateButton(L"Menu", row2, 0, 7 * btw, 16 * bth, hWnd, NULL, BS_GROUPBOX);
 
 		return hFrame;
 	}
