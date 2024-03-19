@@ -168,6 +168,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 			case ID_BTN_CAMERA_OFF: {
+				 for (int i = 0; i < 10; ++i) {  // Checking up to 10 camera indexes
+						cv::VideoCapture cap(i);
+						if (cap.isOpened()) {
+							std::string ff = std::to_string(i);
+							myUIInstance.messi(ff);
+							cap.release();  // Release the VideoCapture
+						} else {
+							std::cout << "Camera index " << i << " is not available." << std::endl;
+						}
+					}
 				if (pref.getprefString(CameraONoFF) == "ON") {
 					pref.SetPreference(CameraONoFF, "OFF");
 					camPtr->setStopCamera(FALSE);

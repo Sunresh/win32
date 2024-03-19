@@ -172,7 +172,7 @@ public:
 		// txtPZT = CreateStaticText(L"PZT volt:", row2, 1 * btspace, btw, bth, hFrame, NULL);
 		// loadPref(txtPZT, PZT_KEY);
 
-		btnCAMINDEX = InputSaveButton(L"0", 0, 15 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
+		btnCAMINDEX = InputSaveButton(L"0", 0, 16 * btspace, 4 * btw, bth, L"Camera Index", hFrame, CAM_INDEX_INPUT, CAM_INDEX_BTN, WS_BORDER, BS_PUSHBUTTON, 90);
 		loadPrefv(btnCAMINDEX, CameraIndex);
 
 		//check folder and create if not allout\20240305 folder inside folder
@@ -182,7 +182,7 @@ public:
 		if (pref.CheckAndCreateFolder(folderName, ddaa) && pref.CheckAndCreateVideoFolder(folderName, ddaa)) {
 			///
 		}
-		camcam = CreateButton(L"Menu", row2, 0, 7 * btw, 16 * bth, hWnd, NULL, BS_GROUPBOX);
+		camcam = CreateButton(L"Menu", row2, 0, 7 * btw, 16.5 * bth, hWnd, NULL, BS_GROUPBOX);
 
 		return hFrame;
 	}
